@@ -43,6 +43,10 @@ lazyworktree create [options] [name]
   Pre-filter the interactive selection list. Requires `-I` or `-P`. When `fzf` is available, the search box is pre-filled with the given string; otherwise the numbered list is filtered to items containing the string (case-insensitive).
 </ParamField>
 
+<ParamField path="--generate" type="boolean">
+  Generate worktree name automatically from the current branch name. Cannot be used with a positional name argument or with `--from-pr-interactive`. Sanitises the branch name to be Git-compatible (lowercase, alphanumeric characters and hyphens only).
+</ParamField>
+
 <ParamField path="--with-change" type="boolean">
   Carry over uncommitted changes to the new worktree. Works with current branch or `--from-branch`. Cannot be used with `--from-pr` or `--from-issue`. Stashes changes from current worktree, creates new worktree, and applies the stash.
 </ParamField>
