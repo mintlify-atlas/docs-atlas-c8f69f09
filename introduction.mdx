@@ -1,0 +1,86 @@
+---
+title: LazyWorktree
+description: Easy Git worktree management for the terminal
+---
+
+# LazyWorktree - Easy Git worktree management for the terminal
+
+LazyWorktree is a TUI for Git worktrees. It provides a keyboard-driven workflow for creating, inspecting, and navigating worktrees within a repository.
+
+Built with [BubbleTea](https://github.com/charmbracelet/bubbletea), it focuses on fast iteration, clear state visibility, and tight Git tooling integration.
+
+<CardGroup cols={3}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running with LazyWorktree in minutes
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Install LazyWorktree on your system
+  </Card>
+  <Card title="Key Features" icon="star" href="#key-features">
+    Explore what LazyWorktree can do
+  </Card>
+</CardGroup>
+
+## Key Features
+
+### Worktree Management
+- Create, rename, remove, absorb, and prune merged worktrees
+- VIM style keybinding and a VSCode-like command palette
+- Filter and search across worktrees, files, and commits
+- Simple per-worktree notes and todo editor with markdown support
+
+### Powerful Creation Options
+- From current branch, optionally with uncommitted changes
+- Checkout existing branch or create a new branch from it
+- From GitHub/GitLab issue with automatic branch naming
+- From open GitHub/GitLab PR or MR
+- Custom creation menu items via configuration
+
+### Git Integration
+- Stage, unstage, commit, edit, and diff files
+- View diffs in a pager with optional delta integration
+- Cherry-pick commits between worktrees
+- Display linked PR/MR, CI status, and checks
+- View CI logs from GitHub Actions
+
+### Session Management
+- Manage per-worktree tmux or zellij sessions
+- Shell integration: jump into worktrees and return to the last-used one
+- Custom commands: define keybindings, tmux/zellij layouts, and per-repo workflows
+
+### Advanced Features
+- Taskboard: view markdown checkbox tasks grouped by worktree
+- Command palette with MRU-based navigation
+- Init/terminate hooks via `.wt` files with TOFU security
+- Automatic branch naming via scripts (e.g., LLM tools)
+- Multiple themes with custom theme support
+
+## What are Git Worktrees?
+
+Git worktrees allow you to have multiple working directories attached to the same repository. Instead of switching branches and losing your current work context, you can:
+
+- Work on multiple branches simultaneously
+- Keep long-running feature branches in separate directories
+- Review pull requests without disrupting your current work
+- Run tests on one branch while developing on another
+
+LazyWorktree makes managing these worktrees effortless with a visual, keyboard-driven interface.
+
+## Why LazyWorktree?
+
+- **Fast**: Built with Go and BubbleTea for instant startup and responsive UI
+- **Keyboard-driven**: Complete control without leaving your keyboard
+- **Git-native**: Tight integration with GitHub, GitLab, and CI systems
+- **Customizable**: Extensive configuration options, custom commands, and themes
+- **Productive**: Shell integration, session management, and automated workflows
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Install LazyWorktree" icon="download" href="/installation">
+    Choose your preferred installation method
+  </Card>
+  <Card title="Get Started" icon="play" href="/quickstart">
+    Learn the basics in 5 minutes
+  </Card>
+</CardGroup>

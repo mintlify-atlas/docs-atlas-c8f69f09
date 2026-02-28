@@ -1,0 +1,227 @@
+---
+title: TUI Interface Guide
+description: Understanding the LazyWorktree TUI interface and navigation
+---
+
+LazyWorktree provides a powerful TUI (Text User Interface) built with [BubbleTea](https://github.com/charmbracelet/bubbletea) that focuses on fast iteration, clear state visibility, and tight Git tooling integration.
+
+## Interface Overview
+
+The LazyWorktree interface is organized into multiple panes, each providing specific information and functionality:
+
+1. **Worktree Pane** (1) - Main list of Git worktrees
+2. **Status Pane** (2) - PR info, CI checks, notes, and divergence status
+3. **Git Status Pane** (3) - Changed files in the selected worktree
+4. **Commit Pane** (4) - Commit history for the selected worktree
+5. **Notes Pane** (5) - Per-worktree notes (visible only when a note exists)
+
+![LazyWorktree Interface](../assets/screenshot-main.png)
+
+## Pane Navigation
+
+### Number Keys for Direct Focus
+
+Use the number keys `1` through `5` to jump directly to a specific pane:
+
+- Press `1` to focus the Worktree pane
+- Press `2` to focus the Status pane
+- Press `3` to focus the Git Status pane
+- Press `4` to focus the Commit pane
+- Press `5` to focus the Notes pane (only visible when the selected worktree has a note)
+
+<Tip>
+Pressing the number key for an already-focused pane will toggle zoom mode, expanding that pane to full screen.
+</Tip>
+
+### Directional Navigation
+
+You can also navigate between panes using directional keys:
+
+- **`h`** - Navigate to the Worktree pane (left)
+- **`l`** - Cycle through right panes (Status, Git Status, Commit, Notes)
+- **`Tab`** or **`]`** - Cycle to the next pane
+- **`[`** - Cycle to the previous pane
+
+## Worktree Pane
+
+The main pane displays all Git worktrees for the current repository. Each entry shows:
+
+- Worktree name
+- Current branch
+- Note marker (if notes exist)
+- Additional status indicators
+
+Use `j`/`k` or arrow keys to navigate the list, and `Enter` to jump to the selected worktree (exits LazyWorktree and outputs the path).
+
+### Sort Modes
+
+Press `s` to cycle through different sort modes:
+
+1. **Path** - Sort alphabetically by worktree path
+2. **Last Active** - Sort by commit date (most recently committed first)
+3. **Last Switched** - Sort by last accessed time (most recently used first)
+
+<Tip>
+The "Last Switched" sort mode is particularly useful for finding the worktrees you've been working on recently.
+</Tip>
+
+## Status Pane
+
+The Status pane displays comprehensive information about the selected worktree:
+
+- **PR/MR Information** - Linked pull request or merge request details
+- **CI Status** - Current CI check status and results
+- **Notes Preview** - Rendered markdown notes with formatting
+- **Divergence Status** - How far ahead/behind the worktree is from upstream
+
+### CI Checks
+
+When CI checks are visible:
+
+- Use `j`/`k` to navigate between checks
+- Press `Enter` to open the selected check in your browser
+- Press `Ctrl+v` to view check logs in the pager
+- Press `Ctrl+r` to restart the job (GitHub Actions only)
+
+## Git Status Pane
+
+Displays changed files in a collapsible tree view, grouped by directory (similar to lazygit):
+
+- Navigate with `j`/`k`
+- Press `Enter` to toggle directory collapse/expand or show file diffs
+- Press `e` to open a file in your editor
+- Press `s` to stage/unstage files or directories
+- Press `d` to show the full diff in a pager
+
+<Note>
+The tree view intelligently groups files by directory, making it easy to manage changes across multiple folders.
+</Note>
+
+### Folder Navigation
+
+Use `ctrl+←` and `ctrl+→` to jump between folders quickly when working with deeply nested directory structures.
+
+## Commit Pane
+
+Shows the commit history for the selected worktree:
+
+- Navigate commits with `j`/`k`
+- Press `Enter` to view the commit's file tree
+- Press `d` to show the full commit diff in a pager
+- Press `C` to cherry-pick the commit to another worktree
+- Press `ctrl+j` to move to the next commit and open its file tree
+
+### Commit File Tree
+
+When viewing files changed in a commit:
+
+- Navigate with `j`/`k`
+- Press `Enter` on directories to expand/collapse them
+- Press `Enter` on files to view their diff
+- Use `ctrl+d`/`ctrl+u` for half-page navigation
+- Press `g`/`G` to jump to top/bottom
+- Press `q` or `Esc` to return to the commit log
+
+## Notes Pane
+
+The Notes pane appears only when the selected worktree has an associated note. It displays rendered markdown with support for:
+
+- Headings
+- Bold text and inline code
+- Lists (ordered and unordered)
+- Quotes
+- Links
+- Fenced code blocks
+- Highlighted tags (`TODO`, `FIXME`, `WARNING:`)
+
+Press `i` to open the notes viewer or editor, or press `5` to focus the Notes pane directly.
+
+## View Controls
+
+### Zoom Mode
+
+Press `=` to toggle zoom mode for the currently focused pane. This expands the pane to full screen, hiding all other panes for maximum viewing space.
+
+<Tip>
+You can also toggle zoom by pressing the number key for the currently focused pane. For example, if pane 3 is focused, press `3` to zoom it.
+</Tip>
+
+### Layout Toggle
+
+Press `L` to toggle between two layout modes:
+
+1. **Default Layout** - Standard multi-pane view with panes arranged side by side
+2. **Top Layout** - Alternative arrangement with different pane positioning
+
+## Filter and Search Modes
+
+### Filter Mode
+
+Press `f` to activate filter mode for the focused pane (works on worktrees, files, and commits):
+
+- Type to filter items in real-time
+- Use `alt+n`/`alt+p` to navigate and update the filter input
+- Use `↑`/`↓` to navigate without changing the input
+- Press `Enter` to exit filter mode whilst keeping the filter active
+- Press `Esc` or `Ctrl+C` to clear the filter
+
+When a filter is active, you'll see a `[Esc] Clear` hint in the interface.
+
+### Search Mode
+
+Press `/` to activate incremental search:
+
+- Type to jump to the first matching item
+- Press `n` for the next match
+- Press `N` for the previous match
+- Press `Enter` to close search
+- Press `Esc` or `Ctrl+C` to clear search
+
+<Note>
+Search mode provides incremental matching, meaning it updates results as you type, making it fast to find specific items.
+</Note>
+
+## Command Palette
+
+Press `ctrl+p` or `:` to open the command palette, which provides quick access to common actions:
+
+- **Select theme** - Change the UI theme with live preview
+- **Create from current branch** - Copy the current branch to a new worktree
+- **Custom commands** - Access user-defined commands and tmux/zellij sessions
+
+The command palette features MRU (Most Recently Used) based navigation, making frequently used commands appear at the top.
+
+## Visual Elements
+
+### Icons
+
+LazyWorktree uses Nerd Font icons by default for a rich visual experience. If you see strange characters, either install a [Nerd Font](https://www.nerdfonts.com/) or set `icon_set: text` in your configuration.
+
+### Themes
+
+LazyWorktree supports multiple themes that can be changed on the fly using the command palette. See the [Themes configuration](/configuration/themes) for available options.
+
+### Status Indicators
+
+- **Note marker** - Indicates worktrees with associated notes
+- **Branch indicators** - Show current branch and tracking status
+- **PR/MR badges** - Display linked pull/merge request status
+- **CI status icons** - Show CI check results (passing, failing, pending)
+
+## Markdown Rendering
+
+Notes and information displayed in the Status pane support rich Markdown formatting:
+
+- Headings are styled hierarchically
+- Code blocks are syntax highlighted (when using delta)
+- Lists are properly indented
+- Links are highlighted
+- Special tags like `TODO`, `FIXME`, and `WARNING:` are highlighted with icons (uppercase only, lowercase remains unchanged)
+
+<Warning>
+Tag highlighting only applies to uppercase tags outside fenced code blocks. Lowercase tags and tags within code blocks are not highlighted.
+</Warning>
+
+## Getting Help
+
+Press `?` at any time to display the built-in help screen, which shows available key bindings for the current context.

@@ -1,0 +1,278 @@
+---
+title: Notes and Taskboard
+description: Per-worktree notes with markdown support and grouped taskboard view
+---
+
+LazyWorktree provides per-worktree notes with markdown rendering and a Kanban-lite taskboard for tracking checkbox tasks across worktrees.
+
+## Worktree Notes
+
+Press **`i`** to open notes for the selected worktree.
+
+### Note Viewer
+
+If a note already exists, LazyWorktree opens a **viewer** first:
+
+**Navigation:**
+- **`j` / `k`** or **arrow keys** - Scroll line by line
+- **`Ctrl+D` / `Ctrl+U`** - Half-page navigation
+- **`g` / `G`** - Jump to top/bottom
+- **`e`** - Edit the note
+- **`q` / `Esc`** - Close viewer
+
+<Tip>
+Worktrees with notes display a note marker icon beside the name in the worktree list.
+</Tip>
+
+### Note Editor
+
+If no note exists, LazyWorktree opens the **editor** directly:
+
+**Controls:**
+- **`Enter`** - Add a new line
+- **`Ctrl+S`** - Save note
+- **`Ctrl+X`** - Open in external editor
+- **`Esc`** - Cancel (discard changes)
+
+<Note>
+The external editor is configured via the `editor` setting (default: `$EDITOR`, fallback to `nvim`).
+</Note>
+
+### Markdown Support
+
+The Notes pane renders markdown formatting:
+
+- **Headings** (`#`, `##`, `###`)
+- **Bold text** (`**bold**`)
+- **Inline code** (`` `code` ``)
+- **Lists** (`-`, `*`, `1.`)
+- **Quotes** (`>`)
+- **Links** (`[text](url)`)
+- **Fenced code blocks** (``` ``` ```)
+
+### Uppercase Note Tags
+
+Uppercase tags are highlighted with icons **outside** fenced code blocks:
+
+- `TODO` - Todo icon
+- `FIXME` - Fix icon
+- `WARNING:` - Warning icon
+- `NOTE:` - Note icon
+
+<CodeGroup>
+```markdown Example Note
+# Feature Implementation
+
+TODO: Add validation for user input
+FIXME: Memory leak in connection handler
+WARNING: Breaking change in API v2
+
+## Tasks
+- [ ] Draft implementation
+- [x] Update changelog
+- [ ] Write tests
+
+```python
+# Code blocks don't highlight TODO/FIXME
+# TODO: This won't be highlighted
+```
+```
+</CodeGroup>
+
+<Tip>
+Lowercase tags (e.g., `todo`, `fixme`) remain unchanged and are not highlighted.
+</Tip>
+
+## External Editor Integration
+
+Press **`Ctrl+X`** in the note editor to open the note in your external editor.
+
+<CodeGroup>
+```yaml config.yaml (Default)
+editor: nvim  # Falls back to $EDITOR or nvim
+```
+
+```yaml config.yaml (VSCode)
+editor: code --wait
+```
+
+```yaml config.yaml (Vim)
+editor: vim
+```
+</CodeGroup>
+
+<Note>
+For GUI editors like VSCode, use the `--wait` flag to ensure LazyWorktree waits for the editor to close.
+</Note>
+
+## Taskboard
+
+Press **`T`** to open the Taskboard, a Kanban-lite view of markdown checkbox tasks grouped by worktree.
+
+### Taskboard View
+
+The Taskboard displays only markdown checkbox items from notes:
+
+```markdown
+- [ ] Draft release notes
+- [x] Update changelog
+- [ ] Test on staging
+```
+
+**Grouped by worktree:**
+```
+┌─ feature-auth ──────────────┐
+│ [ ] Add OAuth2 support      │
+│ [x] Update login tests      │
+└─────────────────────────────┘
+
+┌─ bugfix-memory ─────────────┐
+│ [ ] Reproduce memory leak   │
+│ [ ] Add profiling           │
+└─────────────────────────────┘
+```
+
+### Taskboard Controls
+
+| Key | Action |
+| --- | --- |
+| `j` / `k` | Move between tasks |
+| `Enter` or `Space` | Toggle task completion |
+| `a` | Add a new task |
+| `f` | Filter tasks |
+| `q` / `Esc` | Close Taskboard |
+
+<Tip>
+Tasks toggled in the Taskboard are immediately saved to the worktree note.
+</Tip>
+
+### Add New Task
+
+Press **`a`** in the Taskboard to add a new task:
+
+<Steps>
+  <Step title="Press `a`">
+    Opens task input dialogue
+  </Step>
+  
+  <Step title="Type task description">
+    Enter the task text
+  </Step>
+  
+  <Step title="Press `Enter`">
+    Adds the task as `- [ ] <description>` to the current worktree's note
+  </Step>
+</Steps>
+
+### Filter Tasks
+
+Press **`f`** to filter tasks by worktree name or task description:
+
+<Steps>
+  <Step title="Press `f`">
+    Shows filter input
+  </Step>
+  
+  <Step title="Type filter text">
+    Tasks matching the filter are shown
+  </Step>
+  
+  <Step title="Press `Esc`">
+    Clears the filter
+  </Step>
+</Steps>
+
+## Shared Note Storage
+
+Configure `worktree_notes_path` to store all notes in a single JSON file for cross-system synchronisation:
+
+<CodeGroup>
+```yaml config.yaml
+worktree_notes_path: "~/.local/share/lazyworktree/worktree-notes.json"
+```
+</CodeGroup>
+
+With shared storage:
+- Note keys are **repo/worktree-relative** (not absolute paths)
+- Easier to sync across machines (e.g., Dropbox, Git)
+- Single file for all repositories
+
+<Note>
+Without `worktree_notes_path`, notes are stored per-repository in `<repo>/.git/lazyworktree-notes.json`.
+</Note>
+
+## Automatic Note Generation
+
+Configure `worktree_note_script` to automatically generate notes when creating worktrees from PRs/MRs or issues:
+
+<CodeGroup>
+```yaml config.yaml
+worktree_note_script: "aichat -m gemini:gemini-2.5-flash-lite 'Summarise this ticket into practical implementation notes.'"
+```
+</CodeGroup>
+
+The script receives the issue/PR title and body on stdin and outputs note text.
+
+### Environment Variables
+
+- `LAZYWORKTREE_TYPE` - `pr` or `issue`
+- `LAZYWORKTREE_NUMBER` - Issue/PR number
+- `LAZYWORKTREE_TITLE` - Issue/PR title
+- `LAZYWORKTREE_URL` - Issue/PR URL
+
+<Tip>
+If the script fails or outputs nothing, creation continues without a note.
+</Tip>
+
+## Example Note Workflow
+
+<Steps>
+  <Step title="Create Worktree from Issue">
+    Press **`c`** → **"From GitHub/GitLab issue"** → Select issue #42
+  </Step>
+  
+  <Step title="Auto-generated Note">
+    If `worktree_note_script` is configured, a note is created automatically with implementation context.
+  </Step>
+  
+  <Step title="View Note">
+    Press **`i`** to view the note in the markdown-rendered viewer.
+  </Step>
+  
+  <Step title="Add Tasks">
+    Press **`e`** to edit, add markdown checkboxes:
+    ```markdown
+    - [ ] Draft implementation
+    - [ ] Write tests
+    - [ ] Update documentation
+    ```
+  </Step>
+  
+  <Step title="Track in Taskboard">
+    Press **`T`** to see tasks grouped by worktree.
+  </Step>
+  
+  <Step title="Toggle Completion">
+    Use **`Enter`** or **`Space`** in Taskboard to mark tasks complete.
+  </Step>
+</Steps>
+
+## Note Character Limit
+
+Notes are limited to **4000 characters** to prevent performance issues.
+
+<Warning>
+If you need longer notes, use external documentation and link from the worktree note.
+</Warning>
+
+## Pane Visibility
+
+The **Notes pane** (pane 5) is only visible when the selected worktree has a note.
+
+- Press **`5`** to focus Notes pane (when visible)
+- Press **`5`** again to toggle zoom (full screen)
+- Use **`h`** / **`l`** to navigate left/right panes
+
+<Tip>
+The Notes pane splits the left column in default layout, or appears as a row in top layout.
+</Tip>

@@ -1,0 +1,131 @@
+---
+title: Worktree Management
+description: Create, rename, remove, absorb, and prune merged worktrees
+---
+
+LazyWorktree provides comprehensive worktree lifecycle management with keyboard-driven operations.
+
+## Default Worktree Location
+
+Worktrees are stored in:
+
+```
+~/.local/share/worktrees/<organization>-<repo_name>
+```
+
+You can customise this location via the `worktree_dir` configuration option.
+
+## Core Operations
+
+### Create Worktree
+
+Press **`c`** to open the creation menu with multiple options:
+
+- Create from current branch with or without uncommitted changes
+- Checkout existing branch or create new branch
+- Create from GitHub/GitLab issue with automatic branch naming
+- Create from open PR/MR
+
+<Note>
+See [Creation Modes](/features/creation-modes) for detailed creation workflows.
+</Note>
+
+### Rename Worktree
+
+Press **`m`** to rename the selected worktree.
+
+- Renames both the worktree directory and branch (if names match)
+- Updates all internal references
+- Preserves worktree notes and metadata
+
+Branch naming follows Git conventions:
+- Special characters (`.`, `:`, spaces) are converted to hyphens
+- Leading/trailing hyphens are removed
+- Consecutive hyphens are collapsed
+- Length capped at 50 characters for manual input
+
+### Delete Worktree
+
+Press **`D`** to delete the selected worktree.
+
+- Removes the worktree directory
+- Prompts whether to delete the associated branch
+- Cleans up worktree notes automatically
+
+<Warning>
+Deleting a worktree cannot be undone. Ensure you've committed or stashed any important changes.
+</Warning>
+
+### Absorb Worktree
+
+Press **`A`** to merge the selected worktree back into the main branch.
+
+The absorb operation:
+1. Switches to the main worktree
+2. Merges or rebases the feature branch (based on `merge_method` config)
+3. Deletes the feature worktree and branch
+
+<CodeGroup>
+```yaml config.yaml (Rebase)
+merge_method: "rebase"  # Default
+```
+
+```yaml config.yaml (Merge)
+merge_method: "merge"
+```
+</CodeGroup>
+
+<Tip>
+Absorb is perfect for cleaning up feature branches after completing work.
+</Tip>
+
+### Prune Merged Worktrees
+
+Press **`X`** to prune all merged worktrees.
+
+The prune operation:
+1. Refreshes PR/MR data from GitHub/GitLab
+2. Checks each worktree's merge status
+3. Deletes worktrees with merged branches
+4. Removes orphaned worktree references
+
+<Note>
+Requires `gh` CLI for GitHub or `glab` CLI for GitLab to check PR/MR status.
+</Note>
+
+## Key Bindings Summary
+
+| Key | Action |
+| --- | --- |
+| `c` | Create new worktree |
+| `m` | Rename selected worktree |
+| `D` | Delete selected worktree |
+| `A` | Absorb worktree into main |
+| `X` | Prune merged worktrees |
+
+## Navigation and Selection
+
+- **`j` / `k`** - Move selection up/down
+- **`Enter`** - Jump to worktree (exit and cd)
+- **`f`** - Filter worktrees by name
+- **`/`** - Search worktrees (incremental)
+- **`s`** - Cycle sort mode (Path / Last Active / Last Switched)
+
+<Tip>
+Use the filter (`f`) to quickly narrow down worktrees in large repositories.
+</Tip>
+
+## Branch Naming Conventions
+
+Special characters are automatically converted for Git compatibility:
+
+| Input | Converted |
+| --- | --- |
+| `feature.new` | `feature-new` |
+| `bug fix here` | `bug-fix-here` |
+| `feature:test` | `feature-test` |
+
+- Leading/trailing hyphens removed
+- Consecutive hyphens collapsed
+- Manual input: 50 characters max
+- Auto-generated: 100 characters max

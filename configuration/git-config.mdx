@@ -1,0 +1,194 @@
+---
+title: Git Configuration
+description: Using git config for LazyWorktree settings
+---
+
+LazyWorktree supports configuration via git config, allowing you to set options globally or per-repository. This is particularly useful for repository-specific settings or when you prefer command-line configuration over YAML files.
+
+## Configuration Prefix
+
+All LazyWorktree git config keys use the `lw.` prefix:
+
+```bash
+git config --global lw.theme nord
+```
+
+## Global Configuration
+
+Set options that apply to all repositories:
+
+```bash
+# Set theme globally
+git config --global lw.theme nord
+
+# Set worktree directory
+git config --global lw.worktree_dir ~/.local/share/worktrees
+
+# Set editor
+git config --global lw.editor nvim
+
+# Enable auto-refresh
+git config --global lw.auto_refresh true
+```
+
+## Repository-Specific Configuration
+
+Override global settings for a specific repository:
+
+```bash
+# Use different theme for this repository
+git config --local lw.theme dracula
+
+# Disable PR fetching for this repo
+git config --local lw.disable_pr true
+
+# Use different sort mode
+git config --local lw.sort_mode active
+```
+
+## Multi-Value Settings
+
+Some settings support multiple values. Use multiple `git config` commands to add multiple values:
+
+```bash
+# Add multiple init commands
+git config --local lw.init_commands "link_topsymlinks"
+git config --local --add lw.init_commands "npm install"
+git config --local --add lw.init_commands "code ."
+
+# Add multiple terminate commands
+git config --local lw.terminate_commands "echo 'Cleaning up'"
+git config --local --add lw.terminate_commands "rm -rf tmp/*"
+```
+
+## Viewing Configured Values
+
+View all LazyWorktree git config settings:
+
+```bash
+# View global settings
+git config --global --get-regexp "^lw\."
+
+# View local (repository-specific) settings
+git config --local --get-regexp "^lw\."
+
+# View all settings (global + local)
+git config --get-regexp "^lw\."
+```
+
+## Common Settings
+
+### Theme Configuration
+
+```bash
+# Set theme globally
+git config --global lw.theme nord
+
+# Override for specific repository
+git config --local lw.theme gruvbox-dark
+```
+
+### Sort Mode
+
+```bash
+git config --global lw.sort_mode switched  # Options: switched, active, path
+```
+
+### Pager Settings
+
+```bash
+# Set git pager
+git config --global lw.git_pager delta
+
+# Set regular pager
+git config --global lw.pager "less -R"
+```
+
+### Merge Method
+
+```bash
+git config --global lw.merge_method rebase  # Options: rebase, merge
+```
+
+### Branch Name Templates
+
+```bash
+# Issue branch template
+git config --global lw.issue_branch_name_template "issue-{number}-{title}"
+
+# PR branch template
+git config --global lw.pr_branch_name_template "pr-{number}-{pr_author}-{title}"
+```
+
+### Trust Mode
+
+```bash
+git config --global lw.trust_mode tofu  # Options: tofu, never, always
+```
+
+## Boolean Values
+
+For boolean settings, use `true` or `false`:
+
+```bash
+git config --global lw.auto_refresh true
+git config --global lw.disable_pr false
+git config --global lw.search_auto_select true
+```
+
+## Numeric Values
+
+```bash
+git config --global lw.refresh_interval 10
+git config --global lw.max_untracked_diffs 20
+git config --global lw.max_name_length 100
+```
+
+## Configuration Precedence
+
+Remember that git config has the following precedence in LazyWorktree's overall configuration system:
+
+1. CLI flags (highest priority)
+2. **Git local configuration** (`git config --local`)
+3. **Git global configuration** (`git config --global`)
+4. YAML configuration file
+5. Built-in defaults (lowest priority)
+
+This means local git config overrides global git config, which overrides your YAML file.
+
+## Removing Settings
+
+To remove a git config setting:
+
+```bash
+# Remove global setting
+git config --global --unset lw.theme
+
+# Remove local setting
+git config --local --unset lw.theme
+
+# Remove all values for multi-value setting
+git config --local --unset-all lw.init_commands
+```
+
+## Example: Repository-Specific Setup
+
+A common pattern is to use global settings for defaults and local settings for repository-specific customisation:
+
+```bash
+# Global defaults
+git config --global lw.theme nord
+git config --global lw.worktree_dir ~/.local/share/worktrees
+git config --global lw.merge_method rebase
+
+# Then in a specific repository
+cd ~/projects/my-repo
+
+# Use different theme for this project
+git config --local lw.theme dracula
+
+# Add repository-specific init commands
+git config --local lw.init_commands "link_topsymlinks"
+git config --local --add lw.init_commands "npm install"
+git config --local --add lw.init_commands "npm run setup"
+```

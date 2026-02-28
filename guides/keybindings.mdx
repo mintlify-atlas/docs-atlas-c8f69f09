@@ -1,0 +1,230 @@
+---
+title: Key Bindings Reference
+description: Complete key bindings reference for LazyWorktree
+---
+
+LazyWorktree provides a comprehensive set of keyboard shortcuts for efficient worktree management. This page documents all available key bindings organized by context.
+
+## Main Key Bindings
+
+These key bindings are available in the main worktree list view:
+
+| Key | Action |
+| --- | --- |
+| `Enter` | Jump to worktree (exit and cd) |
+| `j`, `k` | Move selection up/down in lists and menus |
+| `c` | Create new worktree (from branch, commit, PR/MR, or issue) |
+| `i` | Open selected worktree notes (viewer if present, editor if empty) |
+| `T` | Open Taskboard (grouped view of markdown checkbox tasks across worktrees) |
+| `m` | Rename selected worktree |
+| `D` | Delete selected worktree |
+| `d` | View diff in pager (worktree or commit, depending on pane) |
+| `A` | Absorb worktree into main |
+| `X` | Prune merged worktrees (refreshes PR data, checks merge status) |
+| `!` | Run arbitrary command in selected worktree (with command history) |
+| `v` | View CI checks (Enter opens in browser, Ctrl+v views logs in pager) |
+| `o` | Open PR/MR in browser (or root repo in editor if main branch with merged/closed/no PR) |
+| `ctrl+p`, `:` | Command palette |
+| `g` | Open LazyGit |
+| `r` | Refresh list (also refreshes PR/MR/CI for current worktree on GitHub/GitLab) |
+| `R` | Fetch all remotes |
+| `S` | Synchronise with upstream (pull + push, requires clean worktree) |
+| `P` | Push to upstream (prompts to set upstream if missing) |
+| `f` | Filter focused pane (worktrees, files, commits) |
+| `/` | Search focused pane (incremental) |
+| `alt+n`, `alt+p` | Move selection and fill filter input |
+| `↑`, `↓` | Move selection (filter active, no fill) |
+| `s` | Cycle sort mode (Path / Last Active / Last Switched) |
+| `Home` | Go to first item in focused pane |
+| `End` | Go to last item in focused pane |
+| `?` | Show help |
+| `q` | Quit |
+
+## Pane Navigation
+
+Use number keys to focus specific panes, or navigation keys to move between them:
+
+| Key | Action |
+| --- | --- |
+| `1` | Focus Worktree pane (toggle zoom if focused) |
+| `2` | Focus Status pane (toggle zoom if focused) |
+| `3` | Focus Git Status pane (toggle zoom if focused) |
+| `4` | Focus Commit pane (toggle zoom if focused) |
+| `5` | Focus Notes pane (toggle zoom if focused; only visible when worktree has a note) |
+| `h`, `l` | Navigate left/right (h=worktree pane, l=cycle right panes) |
+| `Tab`, `]` | Cycle to next pane |
+| `[` | Cycle to previous pane |
+| `=` | Toggle zoom for focused pane (full screen) |
+| `L` | Toggle layout (default / top) |
+
+## Clipboard Operations
+
+| Key | Action |
+| --- | --- |
+| `y` | Copy to clipboard (context-aware: path in worktrees, file path in git status, SHA in commit; uses OSC52, works over SSH) |
+| `Y` | Copy selected worktree branch name to clipboard |
+
+<Note>
+Clipboard operations use OSC52, which means they work seamlessly over SSH connections without requiring local clipboard utilities.
+</Note>
+
+## Commit Pane
+
+When focused on the commit log:
+
+| Key | Action |
+| --- | --- |
+| `Enter` | Open commit file tree (browse files changed in commit) |
+| `d` | Show full commit diff in pager |
+| `C` | Cherry-pick commit to another worktree |
+| `j/k` | Navigate commits |
+| `ctrl+j` | Next commit and open file tree |
+| `/` | Search commit titles (incremental) |
+
+### Commit File Tree
+
+When viewing files in a commit:
+
+| Key | Action |
+| --- | --- |
+| `j/k` | Navigate files and directories |
+| `Enter` | Toggle directory collapse/expand, or show file diff |
+| `d` | Show full commit diff in pager |
+| `f` | Filter files by name |
+| `/` | Search files (incremental) |
+| `n/N` | Next/previous search match |
+| `ctrl+d`, `Space` | Half page down |
+| `ctrl+u` | Half page up |
+| `g`, `G` | Jump to top/bottom |
+| `q`, `Esc` | Return to commit log |
+
+## Status Pane
+
+Displays PR info, CI checks, notes, and divergence status:
+
+| Key | Action |
+| --- | --- |
+| `j/k` | Navigate CI checks (when visible) |
+| `Enter` | Open selected CI check URL in browser |
+| `Ctrl+v` | View selected CI check logs in pager |
+| `Ctrl+r` | Restart CI job (GitHub Actions only) |
+
+## Git Status Pane
+
+Displays changed files in a collapsible tree view, grouped by directory:
+
+| Key | Action |
+| --- | --- |
+| `j/k` | Navigate between files and directories |
+| `Enter` | Toggle directory expand/collapse, or show diff for files |
+| `e` | Open selected file in editor |
+| `d` | Show full diff of all files in pager |
+| `s` | Stage/unstage selected file or directory |
+| `D` | Delete selected file or directory (with confirmation) |
+| `c` | Commit staged changes |
+| `C` | Stage all changes and commit |
+| `g` | Open LazyGit |
+| `ctrl+←`, `ctrl+→` | Jump to previous/next folder |
+| `/` | Search file/directory names (incremental) |
+| `ctrl+d`, `Space` | Half page down |
+| `ctrl+u` | Half page up |
+| `PageUp`, `PageDown` | Half page up/down |
+
+## Filter Mode
+
+Applies to focused pane (worktrees, files, commits). Active filter shows `[Esc] Clear` hint.
+
+| Key | Action |
+| --- | --- |
+| `f` | Show the filter input in selection menus |
+| `alt+n`, `alt+p` | Navigate and update filter input |
+| `↑`, `↓`, `ctrl+j`, `ctrl+k` | Navigate without changing input |
+| `Enter` | Exit filter mode (filter remains) |
+| `Esc`, `Ctrl+C` | Clear filter |
+
+<Tip>
+Press `Esc` to return to the list while keeping the current filter active. This allows you to see the filtered results without the input field.
+</Tip>
+
+## Search Mode
+
+| Key | Action |
+| --- | --- |
+| `/` | Enter search mode |
+| Type | Jump to the first matching item |
+| `n`, `N` | Next / previous match |
+| `Enter` | Close search |
+| `Esc`, `Ctrl+C` | Clear search |
+
+## Notes Viewer and Editor
+
+Press `i` to open notes for the selected worktree. If a note already exists, LazyWorktree opens a viewer first; if no note exists, it opens the editor.
+
+### Notes Viewer
+
+| Key | Action |
+| --- | --- |
+| `j`/`k`, `↑`/`↓` | Scroll up/down |
+| `Ctrl+D`/`Ctrl+U` | Half-page navigation |
+| `g`/`G` | Jump to top/bottom |
+| `e` | Edit note |
+| `q`, `Esc` | Close viewer |
+
+### Notes Editor
+
+| Key | Action |
+| --- | --- |
+| `Ctrl+S` | Save note |
+| `Ctrl+X` | Open in external editor |
+| `Enter` | Add a new line |
+| `Esc` | Cancel editing |
+
+<Note>
+Worktrees with notes display a note marker beside the name. The Info pane renders Markdown formatting for headings, bold text, inline code, lists, quotes, links, and fenced code blocks. Uppercase note tags such as `TODO`, `FIXME`, or `WARNING:` are highlighted with icons outside fenced code blocks, whilst lowercase tags remain unchanged.
+</Note>
+
+## Taskboard
+
+Press `T` to open Taskboard, a Kanban-lite view grouped by worktree:
+
+| Key | Action |
+| --- | --- |
+| `j`/`k` | Move selection up/down |
+| `Enter`, `Space` | Toggle task completion |
+| `a` | Add a new task |
+| `f` | Filter tasks |
+| `q`, `Esc` | Close Taskboard |
+
+<Note>
+Taskboard collects only markdown checkbox items from notes (for example, `- [ ] draft release notes` and `- [x] update changelog`).
+</Note>
+
+## Command History
+
+When using the `!` key to run arbitrary commands:
+
+| Key | Action |
+| --- | --- |
+| `↑`/`↓` | Navigate command history |
+
+<Tip>
+Command history is saved per repository with a maximum of 100 entries, making it easy to re-run frequently used commands.
+</Tip>
+
+## Command Palette Actions
+
+Access the command palette with `ctrl+p` or `:`:
+
+- **Select theme**: Change theme with live preview
+- **Create from current branch**: Copy current branch to a new worktree. Tick "Include current file changes" to carry over uncommitted changes
+
+## Mouse Controls
+
+| Action | Description |
+| --- | --- |
+| **Click** | Select and focus panes or items |
+| **Scroll** | Navigate lists in any pane |
+
+<Tip>
+Whilst LazyWorktree is optimised for keyboard-driven workflows, mouse support is available for those who prefer it or are learning the keyboard shortcuts.
+</Tip>

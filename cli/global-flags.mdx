@@ -1,0 +1,114 @@
+---
+title: Global Flags
+description: Global flags available for all lazyworktree commands
+---
+
+Global flags can be used with any lazyworktree command, including when launching the TUI.
+
+## Available Flags
+
+<ParamField path="--worktree-dir" type="string">
+  Override the default worktree root directory.
+  
+  **Default**: `~/.local/share/worktrees`
+  
+  **Example**:
+  ```bash
+  lazyworktree --worktree-dir ~/worktrees
+  ```
+</ParamField>
+
+<ParamField path="--config-file" type="string">
+  Path to configuration file, overriding the default XDG config directory location.
+  
+  **Default**: `~/.config/lazyworktree/config.yaml`
+  
+  **Example**:
+  ```bash
+  lazyworktree --config-file ~/my-config.yaml
+  ```
+</ParamField>
+
+<ParamField path="--theme" type="string">
+  Override the UI theme. Available themes: dracula, dracula-light, narna, clean-light, catppuccin-latte, rose-pine-dawn, one-light, everforest-light, everforest-dark, solarized-dark, solarized-light, gruvbox-dark, gruvbox-light, nord, monokai, catppuccin-mocha, modern, tokyo-night, one-dark, rose-pine, ayu-mirage, kanagawa.
+  
+  If unspecified, lazyworktree attempts to auto-detect the theme based on the terminal's background colour.
+  
+  **Example**:
+  ```bash
+  lazyworktree --theme nord
+  ```
+</ParamField>
+
+<ParamField path="--search-auto-select" type="boolean">
+  Start with filter focused and select first match on Enter.
+  
+  **Example**:
+  ```bash
+  lazyworktree --search-auto-select
+  ```
+</ParamField>
+
+<ParamField path="--output-selection" type="string">
+  Write the selected worktree path to a file on exit (for shell integration).
+  
+  **Example**:
+  ```bash
+  lazyworktree --output-selection /tmp/selected-worktree
+  ```
+</ParamField>
+
+<ParamField path="--debug-log" type="string">
+  Path to debug log file for troubleshooting.
+  
+  **Example**:
+  ```bash
+  lazyworktree --debug-log /tmp/lazyworktree.log
+  ```
+</ParamField>
+
+<ParamField path="--show-syntax-themes" type="boolean">
+  Display the default delta syntax-theme values for each UI theme and exit.
+  
+  **Example**:
+  ```bash
+  lazyworktree --show-syntax-themes
+  ```
+</ParamField>
+
+<ParamField path="--version" type="boolean">
+  Print version information and exit.
+  
+  **Example**:
+  ```bash
+  lazyworktree --version
+  ```
+</ParamField>
+
+## Examples
+
+### Combining Global Flags
+
+```bash
+# Custom worktree directory with nord theme
+lazyworktree --worktree-dir ~/worktrees --theme nord
+
+# Debug logging while creating worktree
+lazyworktree --debug-log /tmp/debug.log create my-feature
+
+# Custom config file with search auto-select
+lazyworktree --config-file ~/custom-config.yaml --search-auto-select
+```
+
+### With Subcommands
+
+```bash
+# List worktrees with custom directory
+lazyworktree --worktree-dir ~/worktrees list
+
+# Create worktree with theme override
+lazyworktree --theme dracula create my-feature
+
+# Delete with debug logging
+lazyworktree --debug-log /tmp/debug.log delete my-feature
+```

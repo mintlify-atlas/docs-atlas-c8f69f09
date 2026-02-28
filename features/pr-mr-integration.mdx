@@ -1,0 +1,208 @@
+---
+title: PR/MR Integration
+description: GitHub and GitLab pull request and merge request integration
+---
+
+LazyWorktree integrates with GitHub and GitLab to display PR/MR status, CI checks, and enable browser navigation.
+
+## Requirements
+
+<Note>
+PR/MR integration requires the forge CLI tools:
+- **GitHub**: [gh CLI](https://cli.github.com/)
+- **GitLab**: [glab CLI](https://gitlab.com/gitlab-org/cli)
+</Note>
+
+Install and authenticate with your forge:
+
+<CodeGroup>
+```bash GitHub
+gh auth login
+```
+
+```bash GitLab
+glab auth login
+```
+</CodeGroup>
+
+## Linked PR/MR Display
+
+The Status pane displays linked PR/MR information for each worktree:
+
+- **PR/MR number** (clickable in OSC-8 enabled terminals)
+- **Title**
+- **Author**
+- **State** (Open, Merged, Closed)
+- **CI status** (if available)
+
+### Example Display
+
+```
+PR #123: Add new feature
+Author: @username
+State: OPEN
+CI: ✓ All checks passed
+```
+
+<Tip>
+In terminals with OSC-8 hyperlink support (Kitty, WezTerm, iTerm2), click the PR/MR number to open in your browser.
+</Tip>
+
+## View PR/MR in Browser
+
+Press **`o`** to open the linked PR/MR in your browser.
+
+Behaviour by context:
+
+<Tabs>
+  <Tab title="Worktree with PR/MR">
+    Opens the PR/MR page in your default browser.
+  </Tab>
+  
+  <Tab title="Main Branch - Merged PR">
+    Opens the repository root in your editor (e.g., VSCode).
+  </Tab>
+  
+  <Tab title="Main Branch - Closed PR">
+    Opens the repository root in your editor.
+  </Tab>
+  
+  <Tab title="Main Branch - No PR">
+    Opens the repository root in your editor.
+  </Tab>
+</Tabs>
+
+<Note>
+The editor is configured via the `editor` setting (default: `$EDITOR`, fallback to `nvim`).
+</Note>
+
+## PR/MR Status Refresh
+
+Press **`r`** to refresh PR/MR data for the current worktree.
+
+This also refreshes:
+- CI status and checks
+- Divergence status (ahead/behind)
+- Git status and commit log
+
+<CodeGroup>
+```yaml config.yaml (Auto-refresh)
+auto_refresh: true
+refresh_interval: 10  # Seconds
+```
+
+```yaml config.yaml (Disable PR/MR Fetching)
+disable_pr: false  # Set to true to disable all PR/MR fetching
+```
+</CodeGroup>
+
+## Creating Worktrees from PRs/MRs
+
+Press **`c`** and select **"From open PR/MR"** to:
+
+1. Fetch all open PRs/MRs
+2. Select from a list with titles and authors
+3. Create a worktree with automatic branch naming
+
+### Branch Naming Behaviour
+
+<Tabs>
+  <Tab title="You're the PR Author">
+    LazyWorktree uses the PR's branch name to maintain consistency.
+    
+    ```bash
+    # PR #123 by you with branch "feat-new-ui"
+    # Local branch: feat-new-ui
+    # Worktree name: pr-123-feat-new-ui (based on template)
+    ```
+  </Tab>
+  
+  <Tab title="Different Author">
+    LazyWorktree uses the generated worktree name to avoid conflicts.
+    
+    ```bash
+    # PR #456 by @coworker with branch "feature-xyz"
+    # Local branch: pr-456-add-new-feature (generated name)
+    # Worktree name: pr-456-add-new-feature
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+If the requester identity cannot be resolved, LazyWorktree falls back to the PR branch name.
+</Warning>
+
+### PR Branch Name Template
+
+Customise PR/MR branch names via `pr_branch_name_template`:
+
+<CodeGroup>
+```yaml config.yaml (Default)
+pr_branch_name_template: "pr-{number}-{title}"
+```
+
+```yaml config.yaml (With Author)
+pr_branch_name_template: "pr-{number}-{pr_author}-{title}"
+```
+
+```yaml config.yaml (AI-Generated)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this PR'"
+pr_branch_name_template: "pr-{number}-{generated}"
+```
+</CodeGroup>
+
+### Template Placeholders
+
+- `{number}` - PR/MR number
+- `{title}` - Original sanitised PR/MR title
+- `{pr_author}` - PR author username
+- `{generated}` - AI-generated title (requires `branch_name_script`)
+
+## Prune Merged Worktrees
+
+Press **`X`** to prune all merged worktrees.
+
+The prune operation:
+1. **Refreshes PR/MR data** from GitHub/GitLab
+2. Checks each worktree's merge status
+3. Deletes worktrees with merged branches
+4. Removes orphaned worktree references
+
+Prune results show:
+- **Pruned**: Number of merged worktrees deleted
+- **Failed**: Number of deletion failures
+- **Orphans deleted**: Removed invalid worktree references
+
+<Tip>
+Run prune regularly to keep your worktree list clean after merging PRs/MRs.
+</Tip>
+
+## Disable PR/MR Integration
+
+To disable all PR/MR fetching and display:
+
+<CodeGroup>
+```yaml config.yaml
+disable_pr: true
+```
+</CodeGroup>
+
+This is useful if:
+- You don't use PRs/MRs
+- You work in a private environment without forge access
+- You want to reduce network calls
+
+## OSC-8 Hyperlink Support
+
+In terminals with OSC-8 support, PR/MR numbers are clickable hyperlinks.
+
+**Supported terminals:**
+- Kitty
+- WezTerm
+- iTerm2
+- foot
+- Ghostty
+
+<Note>
+Fallback: Use **`o`** key to open PR/MR in browser on any terminal.
+</Note>

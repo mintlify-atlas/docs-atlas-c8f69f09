@@ -1,0 +1,182 @@
+---
+title: Trust on First Use (TOFU) Security
+description: Understanding LazyWorktree's security model for .wt files
+---
+
+## Why TOFU Security?
+
+LazyWorktree's `.wt` files execute arbitrary shell commands when you create or switch to a worktree. This powerful feature enables automatic environment setup, dependency installation, and workspace configuration—but it also presents a security risk.
+
+<Warning>
+  `.wt` files can execute **any command** with your user privileges. Always review the contents before trusting them.
+</Warning>
+
+To protect against malicious or accidental command execution, LazyWorktree implements **Trust On First Use (TOFU)** security. This ensures you explicitly approve each `.wt` file before its commands can run.
+
+## How TOFU Works
+
+### First Encounter
+
+When LazyWorktree encounters a `.wt` file for the first time (or detects it has been modified), you'll see a prompt with three options:
+
+- **Trust** - Execute the commands and remember this file's hash for future use
+- **Block** - Skip execution for this session without trusting
+- **Cancel** - Abort the operation entirely
+
+### Hash Storage
+
+When you trust a file, LazyWorktree calculates its SHA-256 hash and stores it in:
+
+```
+~/.local/share/lazyworktree/trusted.json
+```
+
+Or if `XDG_DATA_HOME` is set:
+
+```
+$XDG_DATA_HOME/lazyworktree/trusted.json
+```
+
+The trust database maps absolute file paths to their hashes:
+
+```json
+{
+  "/home/user/projects/myapp/.wt": "a1b2c3d4e5f6...",
+  "/home/user/projects/other/.wt": "9f8e7d6c5b4a..."
+}
+```
+
+<Note>
+  Hashes are calculated using SHA-256 on the entire file contents. Even a single character change will produce a different hash and trigger a new trust prompt.
+</Note>
+
+### Subsequent Uses
+
+Each time you interact with a worktree that has a `.wt` file:
+
+1. LazyWorktree calculates the current file's hash
+2. Compares it against the stored hash in `trusted.json`
+3. If they match → commands execute automatically
+4. If different → new trust prompt appears
+
+This protects you from modified `.wt` files, whether changed by malicious actors or accidental edits.
+
+## Trust Mode Configuration
+
+Configure TOFU behavior using the `trust_mode` option:
+
+### `tofu` (Default)
+
+Prompt on first encounter or modification. Recommended for most users.
+
+```yaml
+trust_mode: tofu
+```
+
+### `never`
+
+Skip all `.wt` file execution without prompting. Use when you don't need `.wt` functionality or want maximum security.
+
+```yaml
+trust_mode: never
+```
+
+<Warning>
+  With `trust_mode: never`, no `.wt` commands will execute. You'll need to manually set up each worktree environment.
+</Warning>
+
+### `always`
+
+Trust all `.wt` files without prompting. **Not recommended** unless you have complete control over your repository sources.
+
+```yaml
+trust_mode: always
+```
+
+<Warning>
+  **Dangerous**: `always` mode disables all security checks. Only use in trusted, isolated environments.
+</Warning>
+
+## Security Best Practices
+
+<Accordion title="Review .wt files before trusting">
+  Always read the `.wt` file contents before selecting Trust. Look for:
+  - Unfamiliar commands
+  - Network requests to unknown hosts
+  - File system modifications outside the worktree
+  - Commands that require elevated privileges
+</Accordion>
+
+<Accordion title="Use trust_mode: tofu for shared repositories">
+  When working with repositories from multiple contributors, TOFU mode ensures you approve each change to `.wt` files, even if you trusted an earlier version.
+</Accordion>
+
+<Accordion title="Keep trusted.json backed up">
+  Your trust database at `~/.local/share/lazyworktree/trusted.json` contains your security decisions. Back it up when migrating systems or include it in dotfile repositories.
+</Accordion>
+
+<Accordion title="Periodically audit trusted files">
+  Review your `trusted.json` periodically and remove entries for projects you no longer use:
+  
+  ```bash
+  cat ~/.local/share/lazyworktree/trusted.json | jq 'keys'
+  ```
+  
+  You can manually remove entries from the JSON file if needed.
+</Accordion>
+
+<Accordion title="Be cautious with always mode">
+  Only use `trust_mode: always` in environments where:
+  - You control all repository sources
+  - The system is isolated from sensitive data
+  - You understand the security implications
+</Accordion>
+
+## Understanding the Hash Calculation
+
+LazyWorktree uses SHA-256 hashing to verify file integrity. The hash is calculated on the entire file contents using a 64KB buffer for efficient reading.
+
+From `/home/daytona/workspace/source/internal/security/trust.go:90-122`:
+
+- Reads file in 64KB chunks
+- Calculates SHA-256 hash
+- Returns 64-character hexadecimal string
+- Any content change produces a completely different hash
+
+<Tip>
+  If a `.wt` file contains secrets or credentials (like API keys), consider using environment variables or separate config files instead. This prevents re-prompts when credentials rotate.
+</Tip>
+
+## Troubleshooting Trust Issues
+
+### File keeps prompting despite trusting
+
+The file content has changed. Even whitespace changes trigger new hashes. Review the file to see what changed:
+
+```bash
+git diff .wt
+```
+
+### Lost trust database
+
+If `trusted.json` is deleted or corrupted, LazyWorktree treats all `.wt` files as untrusted. You'll need to re-approve each one.
+
+### Trust database is corrupt
+
+LazyWorktree automatically starts fresh if it detects invalid JSON in `trusted.json`. Check the file manually:
+
+```bash
+jq . ~/.local/share/lazyworktree/trusted.json
+```
+
+### Permission denied on trusted.json
+
+The trust database is created with `0600` permissions (owner read/write only). If you see permission errors:
+
+```bash
+chmod 600 ~/.local/share/lazyworktree/trusted.json
+```
+
+## Related Configuration
+
+- See [.wt Files](/configuration/wt-files) for `.wt` file command syntax and the `link_topsymlinks` built-in command

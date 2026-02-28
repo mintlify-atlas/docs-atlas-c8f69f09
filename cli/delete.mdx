@@ -1,0 +1,41 @@
+---
+title: lazyworktree delete
+description: Delete a worktree without launching the TUI
+---
+
+Delete a worktree and optionally its associated branch without launching the TUI.
+
+Auto-detects the current worktree from the working directory. Automatically deletes the associated branch if the worktree directory name matches the branch name.
+
+## Syntax
+
+```bash
+lazyworktree delete [options] [worktree-path]
+```
+
+## Options
+
+<ParamField path="worktree-path" type="string">
+  Optional worktree path, branch name, or directory name to delete. If not provided, auto-detects from the current working directory.
+</ParamField>
+
+<ParamField path="--no-branch" type="boolean">
+  Skip branch deletion entirely (even if worktree name matches branch name).
+</ParamField>
+
+<ParamField path="--silent" type="boolean">
+  Suppress all progress messages to stderr. Useful for scripting and automation.
+</ParamField>
+
+## Examples
+
+```bash
+# Delete worktree and branch (auto-detected from cwd)
+lazyworktree delete
+
+# Delete worktree only, keep branch
+lazyworktree delete --no-branch
+
+# Delete specific worktree
+lazyworktree delete my-feature
+```

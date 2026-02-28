@@ -1,0 +1,154 @@
+---
+title: Installation
+description: Install LazyWorktree on your system
+---
+
+# Installation
+
+Choose your preferred installation method to get started with LazyWorktree.
+
+## Requirements
+
+Before installing LazyWorktree, ensure you have the following requirements:
+
+### Required
+
+- **Git**: Version 2.31 or higher
+- **Forge CLI**: `gh` (GitHub CLI) or `glab` (GitLab CLI) for PR/MR status display
+
+### Optional
+
+These tools enhance your LazyWorktree experience:
+
+- **Nerd Font**: Icons default to Nerd Font glyphs for a better visual experience
+
+<Note>
+If you see weird characters when starting LazyWorktree, either set `icon_set: text` in your configuration or install a font patched with Nerd Font.
+</Note>
+
+- **delta**: Provides syntax-highlighted diffs (recommended)
+- **lazygit**: Enables full TUI git control within LazyWorktree
+- **tmux / zellij**: For per-worktree session management
+- **[aichat](https://github.com/sigoden/aichat)**: Or similar LLM CLI for automatic branch naming from diffs/issues/PRs
+
+### Build Requirements
+
+If building from source:
+
+- **Go**: Version 1.25 or higher
+
+## Installation Methods
+
+<Steps>
+  <Step title="Choose Your Installation Method">
+    Select the method that works best for your operating system and preferences.
+  </Step>
+</Steps>
+
+### Homebrew (macOS)
+
+The easiest way to install LazyWorktree on macOS:
+
+```bash
+brew tap chmouel/lazyworktree https://github.com/chmouel/lazyworktree
+brew install lazyworktree --cask
+```
+
+#### macOS Gatekeeper Warning
+
+If macOS shows "Apple could not verify lazyworktree", you have two options:
+
+<Warning>
+macOS Gatekeeper may block LazyWorktree on first launch because it's not signed by Apple.
+</Warning>
+
+**Option 1: System Settings**
+
+1. Go to System Settings
+2. Navigate to Privacy & Security
+3. Click "Open Anyway" next to the LazyWorktree warning
+
+**Option 2: Remove quarantine attribute**
+
+```bash
+xattr -d com.apple.quarantine /opt/homebrew/bin/lazyworktree
+```
+
+### Pre-built Binaries
+
+Pre-built binaries are available for multiple platforms:
+
+1. Visit the [Releases page](https://github.com/chmouel/lazyworktree/releases)
+2. Download the binary for your operating system
+3. Extract the archive
+4. Move the binary to a directory in your `PATH`
+
+```bash
+# Example for Linux
+tar -xzf lazyworktree-linux-amd64.tar.gz
+sudo mv lazyworktree /usr/local/bin/
+```
+
+### Arch Linux (AUR)
+
+For Arch Linux users, LazyWorktree is available in the AUR:
+
+```bash
+yay -S lazyworktree-bin
+```
+
+Or with your preferred AUR helper:
+
+```bash
+paru -S lazyworktree-bin
+```
+
+### From Source
+
+If you have Go installed, you can install LazyWorktree directly:
+
+**Direct installation:**
+
+```bash
+go install github.com/chmouel/lazyworktree/cmd/lazyworktree@latest
+```
+
+**Via cloning and building:**
+
+```bash
+git clone https://github.com/chmouel/lazyworktree.git
+cd lazyworktree
+go build -o lazyworktree ./cmd/lazyworktree
+```
+
+Then move the binary to your `PATH`:
+
+```bash
+sudo mv lazyworktree /usr/local/bin/
+```
+
+## Verify Installation
+
+After installation, verify that LazyWorktree is working:
+
+```bash
+lazyworktree --version
+```
+
+You should see the version information displayed.
+
+## Shell Integration (Optional)
+
+For the best experience, set up shell integration to easily navigate to worktrees. Shell helpers change directory to the selected worktree on exit.
+
+Zsh helpers are available in the `shell/functions.zsh` file in the repository. See the [shell README](https://github.com/chmouel/lazyworktree/blob/main/shell/README.md) for setup details.
+
+<Tip>
+Shell integration allows you to use commands like `cd $(lazyworktree)` to jump directly to a selected worktree.
+</Tip>
+
+## Next Steps
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Learn how to use LazyWorktree with our quick start guide
+</Card>

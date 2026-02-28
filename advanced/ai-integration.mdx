@@ -1,0 +1,318 @@
+---
+title: AI-Powered Features
+description: Automatic branch naming and worktree notes using AI
+---
+
+## Overview
+
+LazyWorktree can integrate with AI tools like [aichat](https://github.com/sigoden/aichat/) or [claude code](https://claude.com/product/claude-code) to automatically generate:
+
+- **Branch names** from PR/issue titles or uncommitted diffs
+- **Worktree notes** from PR/issue descriptions
+
+This eliminates manual naming decisions and provides context-aware summaries for each worktree.
+
+<Note>
+  AI features are completely optional. LazyWorktree works perfectly without them using manual branch names.
+</Note>
+
+## Automatic Branch Names
+
+### Why Use AI for Branch Names?
+
+When creating worktrees from:
+- **Pull requests** - Get concise, semantic names instead of long PR titles
+- **Issues** - Convert issue descriptions into actionable branch names
+- **Uncommitted diffs** - Generate meaningful names for your current changes
+
+<Tip>
+  Smaller, faster models suffice for branch naming. You don't need expensive or powerful models—tools like `gemini-2.5-flash-lite` work excellently.
+</Tip>
+
+### Configuration
+
+Add `branch_name_script` to your LazyWorktree config:
+
+```yaml
+# For PRs/issues: generate a title (available via {generated} placeholder)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this PR or issue. Output only the title (like feat-session-manager), nothing else.'"
+
+# Use the generated title in branch naming templates
+pr_branch_name_template: "pr-{number}-{generated}"
+issue_branch_name_template: "issue-{number}-{generated}"
+```
+
+For uncommitted diffs, generate complete branch names:
+
+```yaml
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short git branch name (no spaces, use hyphens) for this diff. Output only the branch name, nothing else.'"
+```
+
+### Template Placeholders
+
+Use these placeholders in your branch name templates:
+
+| Placeholder | Description | Example |
+|-------------|-------------|----------|
+| `{number}` | PR or issue number | `42` |
+| `{title}` | Original title, sanitised for Git | `add-ai-session-management` |
+| `{generated}` | AI-generated title (falls back to `{title}` on failure) | `feat-ai-session-manager` |
+| `{pr_author}` | PR author username (PR templates only) | `alice` |
+
+### Template Examples
+
+Assuming AI generates: `feat-ai-session-manager` for Issue #2
+
+| Template | Result |
+|----------|--------|
+| `issue-{number}-{title}` | `issue-2-add-ai-session-management` |
+| `issue-{number}-{generated}` | `issue-2-feat-ai-session-manager` |
+| `pr-{number}-{generated}` | `pr-7-feat-ai-session-manager` |
+| `pr-{number}-{pr_author}-{title}` | `pr-7-alice-add-ai-session-management` |
+| `{generated}` | `feat-ai-session-manager` |
+
+<Note>
+  If the AI script fails or times out, `{generated}` automatically falls back to `{title}`. Your workflow continues uninterrupted.
+</Note>
+
+### Script Requirements
+
+Your `branch_name_script` must:
+
+1. **Read from stdin** - LazyWorktree pipes PR/issue content or diffs
+2. **Write to stdout** - Output the branch name (first line is used)
+3. **Complete within 30 seconds** - Scripts that exceed this timeout are terminated
+
+**Example script:**
+
+```bash
+#!/bin/bash
+# Reads stdin, generates branch name, outputs to stdout
+aichat -m gemini:gemini-2.5-flash-lite 'Generate a short branch name. Output only the name, nothing else.'
+```
+
+### Environment Variables
+
+LazyWorktree provides context via environment variables:
+
+| Variable | Description | Values |
+|----------|-------------|--------|
+| `LAZYWORKTREE_TYPE` | Type of item being processed | `pr`, `issue`, or `diff` |
+| `LAZYWORKTREE_NUMBER` | PR or issue number | `42` (empty for diffs) |
+| `LAZYWORKTREE_TEMPLATE` | The template being used | `pr-{number}-{generated}` |
+| `LAZYWORKTREE_SUGGESTED_NAME` | LazyWorktree's default suggestion | `pr-42-add-feature` |
+
+Use these to customise prompts:
+
+```yaml
+branch_name_script: |
+  if [ "$LAZYWORKTREE_TYPE" = "diff" ]; then
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a complete branch name for this diff'
+  else
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title (no issue-/pr- prefix) for this issue or PR'
+  fi
+```
+
+Or reference the item number in prompts:
+
+```yaml
+branch_name_script: |
+  aichat -m gemini:gemini-2.5-flash-lite "Generate a title for item #$LAZYWORKTREE_NUMBER. Output only the title."
+```
+
+### Branch Name Sanitisation
+
+All branch names (manual or AI-generated) are automatically sanitised:
+
+- Special characters converted to hyphens: `.`, `:`, `@`, `/`, `\`, etc.
+- Spaces become hyphens
+- Leading and trailing hyphens removed
+- Consecutive hyphens collapsed to one
+- Length capped at **50 characters** (manual) or **100 characters** (AI-generated)
+
+| Input | Sanitised |
+|-------|----------|
+| `feature.new` | `feature-new` |
+| `bug fix here` | `bug-fix-here` |
+| `feature:test` | `feature-test` |
+| `user@domain/fix` | `user-domain-fix` |
+
+## Automatic Worktree Notes
+
+### Why Use AI for Notes?
+
+When creating worktrees from PRs or issues, AI can summarise the description into practical implementation notes. This gives you immediate context when switching worktrees.
+
+### Configuration
+
+Add `worktree_note_script` to generate notes automatically:
+
+```yaml
+worktree_note_script: "aichat -m gemini:gemini-2.5-flash-lite 'Summarise this ticket into practical implementation notes.'"
+```
+
+The script receives the PR/issue title and body on stdin, then outputs your worktree note.
+
+### Synchronisable Notes with JSON Storage
+
+By default, notes are stored in git config (local to each repository clone). For notes that sync across machines or team members, use JSON storage:
+
+```yaml
+worktree_notes_path: ".lazyworktree/notes.json"
+```
+
+This creates a single JSON file in your repository with all worktree notes:
+
+```json
+{
+  "worktrees/feature-x": "Implement user authentication with OAuth2. Key files: auth.go, middleware.go",
+  "worktrees/bugfix-123": "Fix race condition in session manager. Check session.go:45"
+}
+```
+
+<Tip>
+  Commit `.lazyworktree/notes.json` to your repository to share notes with team members or sync across your own machines.
+</Tip>
+
+When `worktree_notes_path` is set, keys are stored relative to `worktree_dir` instead of absolute paths, making them portable across different systems.
+
+### Script Requirements
+
+Your `worktree_note_script` must:
+
+1. **Read from stdin** - Receives PR/issue title and description
+2. **Write to stdout** - Output the note text (can be multiline)
+3. **Complete within 30 seconds** - Timeout enforced
+
+**Example:**
+
+```bash
+#!/bin/bash
+aichat -m gemini:gemini-2.5-flash-lite 'Summarise this into 2-3 practical notes for implementation.'
+```
+
+<Note>
+  If the note script fails or outputs nothing, worktree creation continues normally without saving a note.
+</Note>
+
+## AI Tool Setup
+
+### Using aichat
+
+[aichat](https://github.com/sigoden/aichat/) is a CLI tool supporting multiple AI providers.
+
+**Install:**
+
+```bash
+# macOS
+brew install aichat
+
+# Linux
+cargo install aichat
+```
+
+**Configure:**
+
+```bash
+# Set up your preferred model
+aichat --model gemini:gemini-2.5-flash-lite
+```
+
+**LazyWorktree config:**
+
+```yaml
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short branch name. Output only the name.'"
+worktree_note_script: "aichat -m gemini:gemini-2.5-flash-lite 'Summarise into practical notes.'"
+```
+
+### Using claude code
+
+If you have access to [claude code](https://claude.com/product/claude-code):
+
+```yaml
+branch_name_script: "claude code --prompt 'Generate a short branch name for this content. Output only the name.'"
+```
+
+### Custom AI Scripts
+
+Any script or tool that reads stdin and writes stdout works:
+
+```yaml
+branch_name_script: "/path/to/custom-ai-script.sh"
+```
+
+**Example custom script:**
+
+```bash
+#!/bin/bash
+# custom-ai-script.sh
+# Reads stdin, calls your preferred AI API, outputs result
+
+content=$(cat)
+curl -s https://api.your-ai-service.com/generate \
+  -d "{\"prompt\": \"Generate branch name\", \"content\": \"$content\"}" \
+  | jq -r '.result'
+```
+
+## Troubleshooting AI Features
+
+### Script times out after 30 seconds
+
+Your AI provider is too slow. Try:
+- Using a faster model (e.g., `flash` variants)
+- Reducing context sent to the model
+- Checking network connectivity
+
+### Generated names contain spaces or invalid characters
+
+LazyWorktree automatically sanitises all branch names. If you're still seeing issues, check that your script outputs only the branch name with no extra formatting.
+
+### {generated} always uses {title} fallback
+
+Your script is failing. Test it manually:
+
+```bash
+echo "Test PR title\n\nTest description" | aichat -m gemini:gemini-2.5-flash-lite 'Generate a branch name'
+```
+
+Check for:
+- API authentication issues
+- Network errors
+- Model availability
+
+### Worktree notes not appearing
+
+Check that:
+1. `worktree_note_script` is defined in your config
+2. The script runs successfully when tested manually
+3. You're viewing notes in the correct location (git config vs JSON file)
+
+### Notes not syncing across machines
+
+Ensure:
+1. `worktree_notes_path` is set to a file in your repository
+2. The JSON file is committed and pushed
+3. Other machines have pulled the latest changes
+
+## Performance Tips
+
+<Accordion title="Use smaller models">
+  Branch naming doesn't require powerful models. `gemini-2.5-flash-lite`, `gpt-3.5-turbo`, or similar fast models work excellently and complete in under 2 seconds.
+</Accordion>
+
+<Accordion title="Cache common responses">
+  For repeated PR/issue names, consider a caching layer in your custom script to avoid redundant API calls.
+</Accordion>
+
+<Accordion title="Limit context sent to AI">
+  If PR descriptions are very long, truncate them before sending to the AI model:
+  
+  ```bash
+  head -n 50 | aichat -m gemini:gemini-2.5-flash-lite 'Generate name'
+  ```
+</Accordion>
+
+## Related Configuration
+
+- See [Branch Naming](/configuration/branch-naming) for more template customisation
+- See [Notes and Taskboard](/features/notes-taskboard) for managing worktree notes without AI

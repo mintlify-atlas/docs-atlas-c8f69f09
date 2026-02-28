@@ -1,0 +1,321 @@
+---
+title: Shell Integration
+description: Setting up shell integration for seamless worktree navigation
+---
+
+LazyWorktree provides shell integration helpers that enhance your workflow by allowing you to jump directly to selected worktrees from your shell. When you exit LazyWorktree (by pressing `Enter`), the shell integration automatically changes your current directory to the selected worktree.
+
+## Overview
+
+The shell integration works by using LazyWorktree's `--output-selection` flag, which writes the selected worktree path to a temporary file. The shell helper functions read this file and change to that directory.
+
+<Note>
+Shell integration is optional but highly recommended for a seamless workflow. It eliminates the need to manually copy and paste paths or use the raw `cd $(lazyworktree)` pattern.
+</Note>
+
+## Basic Pattern
+
+The simplest way to jump to a worktree without shell integration is:
+
+```bash
+cd $(lazyworktree)
+```
+
+This works, but the shell integration provides a better experience with additional features like command history and tab completion.
+
+## Zsh Integration
+
+Zsh integration is available through the `functions.zsh` file.
+
+### Option A: Source from Local Clone
+
+If you've cloned the LazyWorktree repository:
+
+```bash
+# Add to .zshrc
+source /path/to/lazyworktree/shell/functions.zsh
+
+jt() { worktree_jump $(git rev-parse --show-toplevel) "$@"; }
+```
+
+### Option B: Download Helper
+
+Download the helper function directly:
+
+```bash
+mkdir -p ~/.shell/functions
+curl -sL https://raw.githubusercontent.com/chmouel/lazyworktree/refs/heads/main/shell/functions.zsh -o ~/.shell/functions/lazyworktree.zsh
+
+# Add to .zshrc
+source ~/.shell/functions/lazyworktree.zsh
+
+jt() { worktree_jump $(git rev-parse --show-toplevel) "$@"; }
+```
+
+### With Tab Completion
+
+Add tab completion for direct worktree jumping:
+
+```bash
+source /path/to/lazyworktree/shell/functions.zsh
+
+jt() { worktree_jump $(git rev-parse --show-toplevel) "$@"; }
+_jt() { _worktree_jump $(git rev-parse --show-toplevel); }
+compdef _jt jt
+```
+
+Now you can use tab completion:
+
+```bash
+jt <Tab>  # Shows available worktrees
+jt my-f<Tab>  # Completes to my-feature
+```
+
+### Last-Selected Worktree Shortcut
+
+Add a shortcut to jump to the last-selected worktree:
+
+```bash
+alias pl='worktree_go_last $(git rev-parse --show-toplevel)'
+```
+
+Usage:
+
+```bash
+pl  # Jumps to the last selected worktree
+```
+
+## Bash Integration
+
+Bash integration works similarly to Zsh.
+
+### Option A: Source from Local Clone
+
+```bash
+# Add to .bashrc
+source /path/to/lazyworktree/shell/functions.bash
+
+jt() { worktree_jump $(git rev-parse --show-toplevel) "$@"; }
+```
+
+### Option B: Download Helper
+
+```bash
+mkdir -p ~/.shell/functions
+curl -sL https://raw.githubusercontent.com/chmouel/lazyworktree/refs/heads/main/shell/functions.bash -o ~/.shell/functions/lazyworktree.bash
+
+# Add to .bashrc
+source ~/.shell/functions/lazyworktree.bash
+
+jt() { worktree_jump $(git rev-parse --show-toplevel) "$@"; }
+```
+
+### With Completion
+
+```bash
+source /path/to/lazyworktree/shell/functions.bash
+
+jt() { worktree_jump $(git rev-parse --show-toplevel) "$@"; }
+_jt() { _worktree_jump $(git rev-parse --show-toplevel); }
+complete -o nospace -F _jt jt
+```
+
+### Last-Selected Worktree Shortcut
+
+```bash
+alias pl='worktree_go_last $(git rev-parse --show-toplevel)'
+```
+
+## Fish Integration
+
+Fish shell integration uses a slightly different syntax.
+
+### Option A: Source from Local Clone
+
+```fish
+# Add to ~/.config/fish/config.fish
+source /path/to/lazyworktree/shell/functions.fish
+
+function jt
+    worktree_jump $(git rev-parse --show-toplevel) $argv
+end
+```
+
+### Option B: Download Helper
+
+```fish
+mkdir -p ~/.config/fish/conf.d
+curl -sL https://raw.githubusercontent.com/chmouel/lazyworktree/refs/heads/main/shell/functions.fish -o ~/.config/fish/conf.d/lazyworktree.fish
+
+# Add to ~/.config/fish/config.fish
+function jt
+    worktree_jump $(git rev-parse --show-toplevel) $argv
+end
+```
+
+### With Completion
+
+```fish
+source /path/to/lazyworktree/shell/functions.fish
+
+function jt
+    worktree_jump $(git rev-parse --show-toplevel) $argv
+end
+
+complete -c jt -f -a '(_worktree_jump $(git rev-parse --show-toplevel))'
+```
+
+### Last-Selected Worktree Shortcut
+
+```fish
+function pl
+    worktree_go_last $(git rev-parse --show-toplevel)
+end
+```
+
+## How It Works
+
+The shell integration functions work by:
+
+1. **Repository Detection** - Using `git rev-parse --show-toplevel` to find the repository root
+2. **Provider Detection** - Detecting GitHub or GitLab from the remote URL
+3. **Slug Generation** - Extracting the `org/repo` slug from the remote URL
+4. **Worktree Location** - Constructing the worktree root path: `~/.local/share/worktrees/<slug>`
+5. **Direct Jump** - If you provide a worktree name as an argument, it jumps directly without launching the TUI
+6. **Output Selection** - Using `--output-selection` to capture the selected worktree path
+7. **Directory Change** - Changing to the selected directory after LazyWorktree exits
+
+## Direct Jump Feature
+
+The shell integration supports direct jumping to a worktree by name:
+
+```bash
+jt my-feature  # Jumps directly to my-feature worktree without launching TUI
+jt             # Launches TUI for interactive selection
+```
+
+<Tip>
+Use tab completion to quickly jump to worktrees without typing the full name.
+</Tip>
+
+## Output Selection Flag
+
+The `--output-selection` flag tells LazyWorktree to write the selected worktree path to a file:
+
+```bash
+tmp=$(mktemp "${TMPDIR:-/tmp}/lazyworktree.selection.XXXXXX")
+lazyworktree --output-selection="$tmp"
+if [[ -s "$tmp" ]]; then
+    selected=$(<"$tmp")
+    cd "$selected"
+fi
+rm -f "$tmp"
+```
+
+This is the core mechanism used by all shell integration helpers.
+
+## Customization
+
+You can customize the shell integration for specific repositories. For example, if you have a repository at `~/git/myrepo`:
+
+```zsh
+# Custom function for specific repo
+if [[ -d ~/git/myrepo ]]; then
+    pm() { worktree_jump ~/git/myrepo "$@" }
+    _pm() { _worktree_jump ~/git/myrepo }
+    compdef _pm pm
+fi
+```
+
+Now you can use `pm` to jump to worktrees in that specific repository, regardless of your current directory.
+
+## Shell Completion for LazyWorktree
+
+In addition to worktree completion, you can generate shell completions for the LazyWorktree CLI itself:
+
+### Bash
+
+```bash
+# Add to .bashrc
+eval "$(lazyworktree completion bash --code)"
+```
+
+### Zsh
+
+```bash
+# Add to .zshrc
+eval "$(lazyworktree completion zsh --code)"
+```
+
+### Fish
+
+```fish
+lazyworktree completion fish --code > ~/.config/fish/completions/lazyworktree.fish
+```
+
+<Note>
+Package manager installations (deb, rpm, AUR) include completions automatically.
+</Note>
+
+To see instructions for your shell:
+
+```bash
+lazyworktree completion
+```
+
+## Troubleshooting
+
+### "worktree_jump: invalid directory" Error
+
+This error occurs when the repository detection fails. Ensure you're running the command from within a Git repository:
+
+```bash
+cd /path/to/your/repo
+jt
+```
+
+### "No last selected worktree found" Error
+
+This happens when using `worktree_go_last` before selecting any worktree. Simply use `jt` to select a worktree first, then `pl` will work.
+
+### Tab Completion Not Working
+
+Ensure the completion function is defined after sourcing the helper functions, and that you've reloaded your shell configuration:
+
+```bash
+source ~/.zshrc  # or ~/.bashrc for Bash
+```
+
+## Example Workflow
+
+Here's a typical workflow using shell integration:
+
+```bash
+# Start in repository root
+cd ~/git/myproject
+
+# Launch LazyWorktree and select a worktree
+jt
+# (Select feature-branch with Enter)
+# Now in ~/worktrees/org-repo/feature-branch
+
+# Do some work
+git commit -am "Add new feature"
+
+# Jump to another worktree
+jt
+# (Select bugfix-branch with Enter)
+# Now in ~/worktrees/org-repo/bugfix-branch
+
+# Return to previous worktree
+pl
+# Back in ~/worktrees/org-repo/feature-branch
+
+# Direct jump without TUI
+jt main
+# Now in ~/worktrees/org-repo/main
+```
+
+<Tip>
+Combine shell integration with tmux or zellij session management for an incredibly powerful development workflow.
+</Tip>

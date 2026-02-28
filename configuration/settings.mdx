@@ -1,0 +1,246 @@
+---
+title: Configuration Settings
+description: Complete reference for all LazyWorktree configuration options
+---
+
+This page documents all configuration settings available in LazyWorktree, organised by category.
+
+## Core Settings
+
+<ParamField path="worktree_dir" type="string" default="~/.local/share/worktrees">
+  Directory where your worktrees will be created. Supports tilde expansion.
+</ParamField>
+
+## Worktree List
+
+<ParamField path="sort_mode" type="string" default="switched">
+  How worktrees are sorted in the list.
+  
+  **Options:**
+  - `switched` - Last accessed by you (default)
+  - `active` - Last commit date
+  - `path` - Alphabetical
+</ParamField>
+
+<ParamField path="layout" type="string" default="default">
+  Pane arrangement. Toggle at runtime with `L`.
+  
+  **Options:**
+  - `default` - Worktrees left, status/log stacked right; notes split left when present
+  - `top` - Worktrees full-width top, notes row below when present, status/log side-by-side bottom
+</ParamField>
+
+<ParamField path="auto_refresh" type="boolean" default={true}>
+  Refresh git metadata and working tree status in the background. Set to false to rely on manual refresh with `r`.
+</ParamField>
+
+<ParamField path="refresh_interval" type="integer" default={10}>
+  Background refresh interval in seconds.
+</ParamField>
+
+<ParamField path="ci_auto_refresh" type="boolean" default={false}>
+  Periodically refresh CI status for GitHub repositories. When enabled, CI checks are refreshed automatically for open PRs or branches with pending CI jobs. Disabled by default as it uses the GitHub API rate limit (5,000 requests/hour for authenticated users).
+</ParamField>
+
+<ParamField path="max_name_length" type="integer" default={95}>
+  Maximum length for worktree names in the table display. Set to 0 to disable truncation.
+</ParamField>
+
+## UI & Display
+
+<ParamField path="theme" type="string" default="">
+  TUI theme. Leave empty to auto-detect based on terminal background colour (defaults to `rose-pine` for dark terminals, `dracula-light` for light terminals).
+  
+  See [Themes](/configuration/themes) for the complete list of built-in themes and custom theme options.
+</ParamField>
+
+<ParamField path="icon_set" type="string" default="nerd-font-v3">
+  Icon set for file trees, PR views, and UI indicators.
+  
+  **Options:**
+  - `nerd-font-v3` - Nerd Font icons
+  - `text` - Text-only (no icons)
+</ParamField>
+
+## Search
+
+<ParamField path="search_auto_select" type="boolean" default={false}>
+  Start with the filter focused and automatically select the first match when you press Enter.
+</ParamField>
+
+<ParamField path="fuzzy_finder_input" type="boolean" default={false}>
+  Show fuzzy suggestions in input dialogues.
+</ParamField>
+
+<ParamField path="palette_mru" type="boolean" default={true}>
+  Enable MRU (Most Recently Used) sorting for command palette.
+</ParamField>
+
+<ParamField path="palette_mru_limit" type="integer" default={5}>
+  Number of recent commands to show in command palette.
+</ParamField>
+
+## Diff & Pager
+
+<ParamField path="git_pager" type="string" default="delta">
+  Diff formatter/pager used for rendering diffs. Set to empty string (`""`) to disable diff formatting and use plain git diff output.
+  
+  Examples: `delta`, `diff-so-fancy`, `diffnav`, `lumen`
+</ParamField>
+
+<ParamField path="git_pager_args" type="array" default={["--syntax-theme", "Dracula"]}>
+  Extra arguments passed to `git_pager`. If you omit this setting and `git_pager` is delta, LazyWorktree automatically selects a syntax theme matching your UI theme.
+</ParamField>
+
+<ParamField path="git_pager_interactive" type="boolean" default={false}>
+  Set to true for interactive diff viewers that need terminal control (e.g., `diffnav`, `tig`). Interactive tools cannot be piped through less. When true, only unstaged changes (`git diff`) are shown.
+</ParamField>
+
+<ParamField path="git_pager_command_mode" type="boolean" default={false}>
+  Set to true for command-based diff viewers that run their own git commands (e.g., `lumen` which accepts `lumen diff`). When true, LazyWorktree calls `<git_pager> diff [args...]` directly instead of piping git diff output.
+</ParamField>
+
+<ParamField path="pager" type="string" default="less --use-color --wordwrap -qcR">
+  Pager used for show_output custom commands. Defaults to `$PAGER` environment variable or `less` if unset.
+</ParamField>
+
+<ParamField path="ci_script_pager" type="string" default="">
+  Pager for CI check logs (accessed with `v` key on CI checks). When set, runs interactively with direct terminal control. Falls back to `pager` if not configured.
+  
+  Example to strip GitHub Actions timestamps:
+  
+  ```yaml
+  ci_script_pager: |
+    sed -E '
+    s/.*[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]+Z[[:space:]]*/\1 /;
+    t;
+    s/.*UNKNOWN STEP[[:space:]]+//' | \
+     tee /tmp/.ci.${LW_CI_JOB_NAME_CLEAN}-${LW_CI_STARTED_AT}.md |
+    less --use-color -q --wordwrap -qcR -P 'Press q to exit..'
+  ```
+  
+  CI environment variables: `LW_CI_JOB_NAME`, `LW_CI_JOB_NAME_CLEAN`, `LW_CI_RUN_ID`, `LW_CI_STARTED_AT`
+</ParamField>
+
+<ParamField path="max_untracked_diffs" type="integer" default={10}>
+  Maximum number of untracked files to show diffs for. Set to 0 to disable diff display for untracked files.
+</ParamField>
+
+<ParamField path="max_diff_chars" type="integer" default={200000}>
+  Maximum characters to read from diff output. Set to 0 to disable truncation.
+</ParamField>
+
+## Editor
+
+<ParamField path="editor" type="string" default="nvim">
+  Editor for opening files from the Status pane (triggered with `e` key). Defaults to `$EDITOR` environment variable, then `nvim`, then `vi`.
+</ParamField>
+
+## Lifecycle Hooks
+
+<ParamField path="init_commands" type="array" default={["link_topsymlinks"]}>
+  Commands to run after creating a new worktree. Executes when creating worktrees from branches, PRs, issues, or changes. Execution order: global config commands first, then repository-specific commands from `.wt` files.
+  
+  Special built-in command:
+  - `link_topsymlinks` - Symlinks untracked/ignored files from main worktree root, non-empty editor configs (`.vscode`, `.idea`, `.cursor`, `.claude`), creates `tmp/` directory, runs `direnv allow` if `.envrc` exists
+  
+  Environment variables available: `WORKTREE_PATH`, `WORKTREE_BRANCH`, `WORKTREE_NAME`, `MAIN_WORKTREE_PATH`, `REPO_NAME`
+  
+  Examples:
+  ```yaml
+  init_commands:
+    - link_topsymlinks
+    - cp $MAIN_WORKTREE_PATH/.env $WORKTREE_PATH/.env
+    - npm install
+  ```
+</ParamField>
+
+<ParamField path="terminate_commands" type="array" default={[]}>
+  Commands to run before deleting a worktree. Executes when deleting individual worktrees or pruning merged worktrees. Execution order: global config commands first, then repository-specific commands from `.wt` files.
+  
+  Environment variables available: Same as `init_commands`
+  
+  Examples:
+  ```yaml
+  terminate_commands:
+    - echo "Cleaning up $WORKTREE_NAME"
+    - rm -rf $WORKTREE_PATH/tmp/*
+  ```
+</ParamField>
+
+<ParamField path="worktree_notes_path" type="string" default="">
+  Optional path to store all worktree notes in a single shared JSON file. Useful when synchronising notes across systems. In this mode, notes are keyed by repo/worktree (relative to `worktree_dir`), rather than absolute paths.
+  
+  Example: `~/.local/share/lazyworktree/worktree-notes.json`
+</ParamField>
+
+## Git Operations
+
+<ParamField path="merge_method" type="string" default="rebase">
+  Merge method for the "Absorb worktree" action and Sync (`S`) behaviour.
+  
+  **Options:**
+  - `rebase` - Rebases onto main, then fast-forwards main to the branch (default)
+  - `merge` - Creates a merge commit on main
+</ParamField>
+
+<ParamField path="disable_pr" type="boolean" default={false}>
+  Disable all PR/MR fetching and display.
+</ParamField>
+
+## Branch Naming
+
+See [Branch Naming](/configuration/branch-naming) for detailed information on these settings.
+
+<ParamField path="issue_branch_name_template" type="string" default="issue-{number}-{title}">
+  Template for issue branch names when creating worktrees from issues.
+  
+  Available placeholders: `{number}`, `{title}`, `{generated}`
+</ParamField>
+
+<ParamField path="pr_branch_name_template" type="string" default="pr-{number}-{title}">
+  Template for PR branch and worktree names when creating from pull requests.
+  
+  Available placeholders: `{number}`, `{title}`, `{generated}`, `{pr_author}`
+</ParamField>
+
+<ParamField path="branch_name_script" type="string" default="">
+  Script to generate branch name suggestions when creating worktrees from changes, issues, or PRs.
+  
+  For issues/PRs: outputs a title used in the `{generated}` placeholder
+  
+  For diffs: outputs a complete branch name
+  
+  The script receives content on stdin and has access to environment variables: `LAZYWORKTREE_TYPE`, `LAZYWORKTREE_NUMBER`, `LAZYWORKTREE_TEMPLATE`, `LAZYWORKTREE_SUGGESTED_NAME`
+</ParamField>
+
+<ParamField path="worktree_note_script" type="string" default="">
+  Script to generate an initial worktree note when creating from a PR/MR or issue. The script receives title + body on stdin.
+  
+  Environment variables: `LAZYWORKTREE_TYPE`, `LAZYWORKTREE_NUMBER`, `LAZYWORKTREE_TITLE`, `LAZYWORKTREE_URL`
+</ParamField>
+
+## Session Management
+
+<ParamField path="session_prefix" type="string" default="wt-">
+  Prefix for tmux/zellij session names. Command palette filters sessions by this prefix.
+</ParamField>
+
+## Security
+
+<ParamField path="trust_mode" type="string" default="tofu">
+  Security setting for executing commands from `.wt` files.
+  
+  **Options:**
+  - `tofu` - Trust On First Use - prompts you the first time or when commands change (default)
+  - `never` - Skips all commands from `.wt` files
+  - `always` - Executes without prompting (use with caution)
+  
+  See [.wt Files](/configuration/wt-files) and [TOFU Security](/advanced/tofu-security) for more details.
+</ParamField>
+
+<ParamField path="debug_log" type="string" default="">
+  Debug log file path for troubleshooting. When set, LazyWorktree writes debug information to this file. Leave commented out unless diagnosing issues.
+  
+  Example: `/tmp/lazyworktree-debug.log`
+</ParamField>

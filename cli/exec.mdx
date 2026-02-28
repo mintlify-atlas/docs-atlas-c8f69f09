@@ -1,0 +1,97 @@
+---
+title: lazyworktree exec
+description: Run commands or trigger custom command keys in a worktree
+---
+
+Execute commands or trigger custom command key actions in a worktree from the CLI. Bridges CLI scripting with the TUI's custom command system.
+
+## Syntax
+
+```bash
+lazyworktree exec [options] [command]
+```
+
+## Options
+
+<ParamField path="command" type="string">
+  Shell command to execute. Mutually exclusive with `--key`. The command runs through your shell environment (`$SHELL`) with appropriate flags (`zsh -ilc`, `bash -ic`, or fallback `-lc`).
+</ParamField>
+
+<ParamField path="-w, --workspace" type="string">
+  Target worktree by name, path, or branch name. If not provided, lazyworktree auto-detects the worktree from the current directory.
+</ParamField>
+
+<ParamField path="-k, --key" type="string">
+  Custom command key to trigger (e.g., 't' for tmux, 'z' for zellij). Mutually exclusive with the positional command argument. The key must exist in your configuration's `custom_commands`.
+</ParamField>
+
+## Environment Variables
+
+The exec command sets the following environment variables (same as custom commands in the TUI):
+
+- `WORKTREE_PATH` - The absolute path to the worktree directory
+- `WORKTREE_BRANCH` - The branch name of the worktree
+- `WORKTREE_NAME` - The basename of the worktree directory
+- `REPO_NAME` - The repository name
+- `MAIN_WORKTREE_PATH` - The path to the main worktree
+
+## Shell Mode
+
+Commands run through your shell environment with appropriate flags:
+- `zsh`: `-ilc`
+- `bash`: `-ic`
+- Other shells: `-lc`
+
+## Supported Command Types
+
+- **shell**: Run arbitrary shell commands
+- **tmux**: Create and manage tmux sessions
+- **zellij**: Create and manage zellij sessions
+- **show-output**: Run non-interactively and show stdout/stderr in pager
+
+**Note**: `new-tab` commands are not supported in CLI mode.
+
+## Examples
+
+### Running Shell Commands
+
+```bash
+# Run in specific worktree
+lazyworktree exec --workspace=my-feature "make test"
+lazyworktree exec -w my-feature "git status"
+
+# Auto-detect worktree from current directory
+cd ~/worktrees/repo/my-feature
+lazyworktree exec "npm run build"
+```
+
+### Triggering Custom Command Keys
+
+```bash
+# Trigger tmux session
+lazyworktree exec --key=t --workspace=my-feature
+lazyworktree exec -k t -w my-feature
+
+# Trigger zellij session
+lazyworktree exec --key=z --workspace=my-feature
+lazyworktree exec -k z -w my-feature
+
+# Auto-detect worktree and trigger key action
+cd ~/worktrees/repo/my-feature
+lazyworktree exec --key=t
+```
+
+### Advanced Examples
+
+```bash
+# Run tests in multiple worktrees
+for wt in $(lazyworktree list --pristine); do
+  lazyworktree exec -w "$wt" "npm test"
+done
+
+# Check status of all worktrees
+lazyworktree list --pristine | while read -r wt; do
+  echo "=== $(basename "$wt") ==="
+  lazyworktree exec -w "$wt" "git status -s"
+done
+```

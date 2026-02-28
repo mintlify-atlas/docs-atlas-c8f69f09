@@ -1,0 +1,84 @@
+---
+title: lazyworktree list
+description: List all worktrees
+---
+
+List all worktrees in various output formats. Alias: `ls`.
+
+## Syntax
+
+```bash
+lazyworktree list [options]
+lazyworktree ls [options]
+```
+
+## Options
+
+<ParamField path="--pristine" type="boolean">
+  Output paths only (one per line, suitable for scripting). Mutually exclusive with `--json`.
+</ParamField>
+
+<ParamField path="--json" type="boolean">
+  Output as JSON. Mutually exclusive with `--pristine`.
+</ParamField>
+
+## Output Formats
+
+### Default: Table Format
+
+The default output is a formatted table showing:
+- Name (directory basename)
+- Branch name
+- Status (dirty state, ahead/behind counts)
+- Last active timestamp
+- Full path
+
+### Pristine Format
+
+With `--pristine`, outputs only worktree paths (one per line), suitable for scripting:
+
+```bash
+/path/to/worktree1
+/path/to/worktree2
+```
+
+### JSON Format
+
+With `--json`, outputs structured JSON:
+
+```json
+[
+  {
+    "path": "/path/to/worktree",
+    "name": "worktree",
+    "branch": "feature-branch",
+    "is_main": false,
+    "dirty": true,
+    "ahead": 2,
+    "behind": 0,
+    "unpushed": 5,
+    "last_active": "2026-02-28T10:30:00Z"
+  }
+]
+```
+
+## Examples
+
+```bash
+# Table output (default)
+lazyworktree list
+
+# Paths only (scripting)
+lazyworktree list --pristine
+
+# JSON output
+lazyworktree list --json
+
+# Using alias
+lazyworktree ls
+```
+
+## Notes
+
+- `--pristine` and `--json` are mutually exclusive
+- Worktrees are sorted by path in all output formats

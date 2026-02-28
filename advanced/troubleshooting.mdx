@@ -1,0 +1,475 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for LazyWorktree
+---
+
+## Git Version Requirements
+
+LazyWorktree requires **Git 2.31 or newer** for full worktree functionality.
+
+**Check your version:**
+
+```bash
+git --version
+```
+
+**Upgrade Git:**
+
+```bash
+# macOS
+brew upgrade git
+
+# Ubuntu/Debian
+sudo add-apt-repository ppa:git-core/ppa
+sudo apt update
+sudo apt upgrade git
+
+# Fedora/RHEL
+sudo dnf upgrade git
+```
+
+<Warning>
+  Git versions older than 2.31 may cause errors when creating or managing worktrees. Always use the latest stable version.
+</Warning>
+
+## Icon and Font Issues
+
+### Icons showing as boxes or question marks
+
+LazyWorktree uses [Nerd Fonts](https://www.nerdfonts.com/) for icons. If you see boxes, question marks, or broken symbols:
+
+**Solution 1: Install a Nerd Font**
+
+```bash
+# macOS
+brew tap homebrew/cask-fonts
+brew install --cask font-jetbrains-mono-nerd-font
+
+# Linux - download from https://www.nerdfonts.com/
+# Then configure your terminal to use the font
+```
+
+**Solution 2: Use text fallback**
+
+If you can't install Nerd Fonts, disable icons:
+
+```yaml
+icon_set: text
+```
+
+This uses ASCII characters instead of icons:
+- `>` instead of `󰀡`
+- `+` instead of ``
+- `-` instead of ``
+
+### Terminal not rendering fonts correctly
+
+Even with Nerd Fonts installed, some terminals don't render them properly:
+
+1. Verify your terminal supports UTF-8:
+   ```bash
+   echo $LANG
+   # Should show something like: en_US.UTF-8
+   ```
+
+2. Configure terminal to use your Nerd Font (check terminal preferences)
+
+3. Test icon rendering:
+   ```bash
+   echo "󰀡 󰙥  󰟟"
+   # Should show folder, git branch, and checkmark icons
+   ```
+
+## macOS Gatekeeper Issues
+
+### "lazyworktree cannot be opened because the developer cannot be verified"
+
+This appears when running unsigned binaries on macOS.
+
+**Solution:**
+
+```bash
+# Remove quarantine attribute
+xattr -d com.apple.quarantine /path/to/lazyworktree
+
+# Or allow in System Preferences
+# System Preferences → Security & Privacy → General → "Allow Anyway"
+```
+
+**Permanent solution:** Install via Homebrew, which handles code signing:
+
+```bash
+brew install lazyworktree
+```
+
+## PR/MR Not Showing
+
+### Pull requests or merge requests don't appear in the list
+
+LazyWorktree requires platform-specific CLI tools:
+
+**For GitHub PRs:**
+
+```bash
+# Install GitHub CLI
+brew install gh
+
+# Or on Linux
+sudo apt install gh  # Debian/Ubuntu
+sudo dnf install gh  # Fedora/RHEL
+
+# Authenticate
+gh auth login
+```
+
+**For GitLab MRs:**
+
+```bash
+# Install GitLab CLI
+brew install glab
+
+# Or download from https://gitlab.com/gitlab-org/cli
+
+# Authenticate
+glab auth login
+```
+
+<Note>
+  LazyWorktree automatically detects your repository's platform (GitHub, GitLab, Gitea, etc.) and uses the appropriate CLI tool.
+</Note>
+
+### "Failed to fetch pull requests"
+
+Check authentication:
+
+```bash
+# GitHub
+gh auth status
+
+# GitLab
+glab auth status
+```
+
+If not authenticated, run:
+
+```bash
+# GitHub
+gh auth login
+
+# GitLab
+glab auth login
+```
+
+## CI Status Issues
+
+### CI status not updating or showing outdated information
+
+**Solution 1: Adjust auto-refresh interval**
+
+```yaml
+# Refresh every 30 seconds (default: 60)
+ci_auto_refresh: 30
+```
+
+**Solution 2: Disable problematic PR fetching**
+
+If PR fetching causes delays or errors:
+
+```yaml
+disable_pr: true
+```
+
+<Warning>
+  Setting `disable_pr: true` disables all PR/MR functionality, including CI status. Use this only if PR features are causing issues.
+</Warning>
+
+**Solution 3: Force manual refresh**
+
+Press the refresh keybinding (default: `r`) to immediately update CI status.
+
+### "Rate limit exceeded" errors
+
+GitHub and GitLab APIs have rate limits. If you see rate limit errors:
+
+1. Increase `ci_auto_refresh` interval to reduce API calls
+2. Use authenticated API access (via `gh auth login` or `glab auth login`)
+3. Wait for rate limit to reset (usually 1 hour)
+
+## Debug Logging
+
+### Enable debug logging
+
+For detailed troubleshooting information:
+
+**Command-line flag:**
+
+```bash
+lazyworktree --debug-log
+```
+
+**Configuration file:**
+
+```yaml
+debug_log: true
+```
+
+Debug logs include:
+- Git command execution and output
+- API requests and responses
+- File operations and trust checks
+- Configuration loading and validation
+
+### View debug output
+
+Debug logs are written to stderr. Capture them:
+
+```bash
+lazyworktree --debug-log 2> debug.log
+```
+
+Or view in real-time:
+
+```bash
+lazyworktree --debug-log 2>&1 | tee debug.log
+```
+
+<Tip>
+  When reporting issues, include debug logs to help maintainers diagnose problems quickly.
+</Tip>
+
+## Permission Issues
+
+### Permission denied when executing .wt files
+
+`.wt` files must be executable:
+
+```bash
+chmod +x .wt
+```
+
+Or make executable when creating:
+
+```bash
+touch .wt && chmod +x .wt
+```
+
+### Permission denied on trusted.json
+
+The trust database requires read/write access:
+
+```bash
+chmod 600 ~/.local/share/lazyworktree/trusted.json
+```
+
+If the directory doesn't exist:
+
+```bash
+mkdir -p ~/.local/share/lazyworktree
+```
+
+### Cannot create worktree: permission denied
+
+Check permissions on your `worktree_dir`:
+
+```bash
+# Default location
+ls -la .git/worktrees
+
+# Or custom location from config
+ls -la /path/to/worktree_dir
+```
+
+Fix permissions:
+
+```bash
+chmod 755 /path/to/worktree_dir
+```
+
+## Common Error Messages
+
+### "worktree already exists"
+
+A worktree with that name already exists. Either:
+
+1. Choose a different name
+2. Remove the existing worktree first:
+   ```bash
+   git worktree remove /path/to/existing/worktree
+   ```
+3. Use LazyWorktree's delete function (usually `d` key)
+
+### Invalid reference errors
+
+The branch name contains invalid characters. LazyWorktree sanitises names automatically, but if you see this:
+
+1. Avoid special characters: `*`, `?`, `[`, `]`, `~`, `^`, `:`, `\\`
+2. Don't use Git-reserved names: `HEAD`, `refs/`, `-`, `@`
+3. Check for double dots: `..`
+
+### "fatal: not a git repository"
+
+You're not in a Git repository. LazyWorktree requires:
+
+```bash
+# Verify you're in a repo
+git status
+
+# Or initialise a new one
+git init
+```
+
+### "failed to create worktree: disk full"
+
+No disk space available. Check free space:
+
+```bash
+df -h
+```
+
+Free up space or use a different `worktree_dir` on another volume:
+
+```yaml
+worktree_dir: "/mnt/external/worktrees"
+```
+
+### "failed to fetch: authentication failed"
+
+Git cannot authenticate with the remote. Set up SSH keys or credential helper:
+
+```bash
+# Test SSH
+ssh -T git@github.com
+
+# Or configure credential helper
+git config --global credential.helper cache
+```
+
+## Configuration Issues
+
+### Config file not loading
+
+LazyWorktree searches for config in this order:
+
+1. `.lazyworktree.yml` (repository root)
+2. `~/.config/lazyworktree/config.yml` (global)
+
+Verify file exists and has correct YAML syntax:
+
+```bash
+# Test YAML syntax
+ruby -ryaml -e "YAML.load_file('.lazyworktree.yml')"
+
+# Or use a YAML linter
+yamllint .lazyworktree.yml
+```
+
+### Invalid configuration value
+
+Check for:
+- Typos in option names
+- Invalid values (e.g., negative numbers for `ci_auto_refresh`)
+- Incorrect indentation (YAML is whitespace-sensitive)
+
+**Example valid config:**
+
+```yaml
+worktree_dir: ".worktrees"
+trust_mode: tofu
+icon_set: nerd_font
+ci_auto_refresh: 60
+debug_log: false
+```
+
+## Worktree Management Issues
+
+### Worktree stuck in "locked" state
+
+Git locks worktrees during operations. If a lock persists after a crash:
+
+```bash
+# Unlock manually
+git worktree unlock /path/to/worktree
+
+# Or force removal
+git worktree remove --force /path/to/worktree
+```
+
+### Worktree deleted but still appears
+
+LazyWorktree caches worktree lists. Refresh:
+
+1. Press refresh keybinding (default: `r`)
+2. Restart LazyWorktree
+3. Run `git worktree prune` to clean up stale entries:
+   ```bash
+   git worktree prune
+   ```
+
+### Cannot delete main worktree
+
+Git doesn't allow deleting the main worktree (the original repository clone). This is expected behaviour.
+
+## Performance Issues
+
+### LazyWorktree slow to start
+
+Possible causes:
+
+1. **Large repository** - First load scans all worktrees and refs
+2. **Slow network** - Fetching PR/MR data takes time
+3. **Too frequent CI refresh** - Increase `ci_auto_refresh` interval:
+   ```yaml
+   ci_auto_refresh: 120  # 2 minutes instead of 1
+   ```
+
+### UI feels sluggish
+
+Try:
+
+1. Disable PR fetching if not needed:
+   ```yaml
+   disable_pr: true
+   ```
+
+2. Reduce auto-refresh frequency:
+   ```yaml
+   ci_auto_refresh: 0  # Disable auto-refresh
+   ```
+
+3. Use a terminal with good rendering performance (e.g., Alacritty, Kitty, WezTerm)
+
+## Getting More Help
+
+<Accordion title="Check the documentation">
+  Browse the complete LazyWorktree documentation for detailed guides:
+  - [Getting Started](/introduction)
+  - [Configuration](/configuration/overview)
+  - [Features](/features/worktree-management)
+</Accordion>
+
+<Accordion title="Search existing issues">
+  Check if your problem is already reported:
+  - GitHub Issues: https://github.com/chmouel/lazyworktree/issues
+</Accordion>
+
+<Accordion title="Ask the community">
+  Join discussions or ask questions:
+  - GitHub Discussions: https://github.com/chmouel/lazyworktree/discussions
+</Accordion>
+
+<Accordion title="Report a bug">
+  If you've found a bug, report it with:
+  - LazyWorktree version: `lazyworktree --version`
+  - Git version: `git --version`
+  - Operating system and terminal
+  - Debug logs: `lazyworktree --debug-log 2> debug.log`
+  - Steps to reproduce
+  
+  Create an issue: https://github.com/chmouel/lazyworktree/issues/new
+</Accordion>
+
+## Related Pages
+
+- [TOFU Security](/advanced/tofu-security) - Trust on First Use troubleshooting
+- [AI Integration](/advanced/ai-integration) - AI feature issues
+- [Configuration Reference](/configuration/overview) - All configuration options

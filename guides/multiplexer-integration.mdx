@@ -1,0 +1,438 @@
+---
+title: Multiplexer Integration
+description: Managing per-worktree tmux and zellij sessions
+---
+
+LazyWorktree provides powerful integration with terminal multiplexers (tmux and zellij) to manage per-worktree sessions. This allows you to maintain separate development environments for each worktree, with custom layouts, windows, and commands.
+
+## Overview
+
+Multiplexer integration enables you to:
+
+- Create dedicated tmux or zellij sessions for each worktree
+- Define custom window/tab layouts with specific commands
+- Automatically switch to existing sessions or create new ones
+- Manage sessions from the command palette
+- Configure per-worktree or per-repository session behaviour
+
+<Note>
+By default, LazyWorktree binds `t` to tmux and `Z` to zellij. You can override these bindings in your configuration.
+</Note>
+
+## Default Commands
+
+LazyWorktree includes two default multiplexer commands:
+
+- **`t`** - Launch or switch to a tmux session
+- **`Z`** - Launch or switch to a zellij session
+
+Press these keys whilst focused on a worktree to create or attach to a session for that worktree.
+
+## Session Prefix Configuration
+
+Configure a session name prefix to organize your multiplexer sessions:
+
+```yaml
+session_prefix: "wt-"  # Default prefix for tmux/zellij session names
+```
+
+The command palette filters sessions by this prefix, making it easy to find and switch between worktree sessions.
+
+<Tip>
+Use a unique prefix like `wt-` or `work-` to distinguish LazyWorktree sessions from other tmux/zellij sessions you might have running.
+</Tip>
+
+## Custom Multiplexer Commands
+
+Define custom tmux or zellij commands in your configuration file:
+
+```yaml
+custom_commands:
+  t:  # Override the default tmux command
+    description: Tmux session
+    show_help: true
+    tmux:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: editor
+          command: nvim
+        - name: shell
+          command: zsh
+        - name: lazygit
+          command: lazygit
+```
+
+## tmux Configuration
+
+### Basic tmux Session
+
+```yaml
+custom_commands:
+  t:
+    description: Tmux
+    show_help: true
+    tmux:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+```
+
+This creates a simple tmux session with default shell windows.
+
+### Multi-Window tmux Session
+
+```yaml
+custom_commands:
+  t:
+    description: Tmux with layout
+    show_help: true
+    tmux:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: claude
+          command: claude
+        - name: shell
+          command: zsh
+        - name: lazygit
+          command: lazygit
+        - name: tests
+          command: npm run test:watch
+          cwd: $WORKTREE_PATH/tests
+```
+
+### tmux Field Reference
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `session_name` | string | `wt:$WORKTREE_NAME` | Session name (env vars supported, special chars replaced) |
+| `attach` | bool | `true` | Attach immediately; if false, show modal with instructions |
+| `on_exists` | string | `switch` | Behaviour if session exists: `switch`, `attach`, `kill`, `new` |
+| `windows` | list | `[ { name: "shell" } ]` | Window definitions for the session |
+
+### tmux Window Field Reference
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | string | `window-N` | Window name (supports env vars) |
+| `command` | string | `""` | Command to run in the window (empty uses your default shell) |
+| `cwd` | string | `$WORKTREE_PATH` | Working directory for the window (supports env vars) |
+
+<Note>
+If `windows` is empty, tmux creates a single `shell` window by default.
+</Note>
+
+## zellij Configuration
+
+### Basic zellij Session
+
+```yaml
+custom_commands:
+  Z:
+    description: Zellij
+    show_help: true
+    zellij:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+```
+
+### Multi-Tab zellij Session
+
+```yaml
+custom_commands:
+  Z:
+    description: Zellij with tabs
+    show_help: true
+    zellij:
+      session_name: "wt-$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: editor
+          command: nvim
+        - name: shell
+        - name: server
+          command: npm run dev
+        - name: tests
+          command: npm run test:watch
+```
+
+### zellij Field Reference
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `session_name` | string | `wt:$WORKTREE_NAME` | Session name (env vars supported, special chars replaced) |
+| `attach` | bool | `true` | Attach immediately; if false, show modal with instructions |
+| `on_exists` | string | `switch` | Behaviour if session exists: `switch`, `attach`, `kill`, `new` |
+| `windows` | list | `[ { name: "shell" } ]` | Tab definitions for the session |
+
+### zellij Window Field Reference
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | string | `window-N` | Tab name (supports env vars) |
+| `command` | string | `""` | Command to run in the tab (empty uses your default shell) |
+| `cwd` | string | `$WORKTREE_PATH` | Working directory for the tab (supports env vars) |
+
+<Note>
+If `windows` is empty, zellij creates a single `shell` tab by default. Session names with `/`, `\`, or `:` are replaced with `-`.
+</Note>
+
+## on_exists Behaviour
+
+The `on_exists` field controls what happens when a session with the same name already exists:
+
+| Value | Behaviour |
+|-------|----------|
+| `switch` | Switch to the existing session (default) |
+| `attach` | Attach to the existing session in the current terminal |
+| `kill` | Kill the existing session and create a new one |
+| `new` | Create a new session with a modified name (appends a number) |
+
+### Examples
+
+```yaml
+# Always switch to existing sessions
+tmux:
+  on_exists: switch
+
+# Always kill and recreate
+tmux:
+  on_exists: kill
+
+# Create new session with incremented name
+tmux:
+  on_exists: new
+  # Creates: wt:my-feature, wt:my-feature-1, wt:my-feature-2, etc.
+```
+
+<Tip>
+Use `switch` for most workflows to avoid duplicate sessions. Use `kill` if you want to ensure a fresh environment each time.
+</Tip>
+
+## Environment Variables
+
+Session configurations support environment variables for dynamic naming and paths:
+
+- `$WORKTREE_NAME` - Name of the worktree (e.g., `my-feature`)
+- `$WORKTREE_BRANCH` - Branch name for the worktree
+- `$WORKTREE_PATH` - Full path to the worktree directory
+- `$MAIN_WORKTREE_PATH` - Path to the main/root worktree
+- `$REPO_NAME` - Name of the repository
+
+### Examples
+
+```yaml
+custom_commands:
+  t:
+    description: Project session
+    tmux:
+      session_name: "$REPO_NAME:$WORKTREE_NAME"
+      windows:
+        - name: "$WORKTREE_BRANCH"
+          command: nvim
+          cwd: $WORKTREE_PATH
+        - name: root
+          command: zsh
+          cwd: $MAIN_WORKTREE_PATH
+```
+
+## New Terminal Tab Integration
+
+Launch multiplexer sessions in new terminal tabs (requires Kitty with remote control enabled, WezTerm, or iTerm):
+
+```yaml
+custom_commands:
+  t:
+    description: Tmux in new tab
+    new_tab: true
+    tmux:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+```
+
+<Warning>
+The `new_tab` feature requires specific terminal emulators and configurations. Ensure your terminal supports this before enabling it.
+</Warning>
+
+## CLI Integration
+
+Trigger multiplexer sessions from the command line using the `exec` command:
+
+```bash
+# Launch tmux session for a specific worktree
+lazyworktree exec --key=t --workspace=my-feature
+
+# Launch zellij session
+lazyworktree exec -k Z -w my-feature
+
+# Auto-detect worktree from current directory
+cd ~/worktrees/repo/my-feature
+lazyworktree exec --key=t
+```
+
+See the [CLI exec command](/cli/exec) for more details.
+
+## Command Palette Session Management
+
+The command palette (accessed with `ctrl+p` or `:`) displays all active sessions matching your configured `session_prefix`. You can:
+
+- View all active worktree sessions
+- Switch between sessions quickly
+- Create new sessions for worktrees that don't have one
+
+<Tip>
+The command palette uses MRU (Most Recently Used) ordering, so your frequently accessed sessions appear at the top.
+</Tip>
+
+## Example Workflows
+
+### Development Environment Setup
+
+```yaml
+custom_commands:
+  t:
+    description: Dev environment
+    show_help: true
+    tmux:
+      session_name: "dev:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: editor
+          command: nvim .
+        - name: server
+          command: npm run dev
+        - name: tests
+          command: npm run test:watch
+        - name: shell
+          command: zsh
+```
+
+### Full-Stack Development
+
+```yaml
+custom_commands:
+  t:
+    description: Full-stack session
+    show_help: true
+    tmux:
+      session_name: "fs:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: frontend
+          command: npm run dev
+          cwd: $WORKTREE_PATH/frontend
+        - name: backend
+          command: npm run dev
+          cwd: $WORKTREE_PATH/backend
+        - name: database
+          command: psql mydb
+        - name: logs
+          command: tail -f logs/development.log
+        - name: shell
+```
+
+### Review and Testing
+
+```yaml
+custom_commands:
+  r:  # Review session
+    description: Review PR
+    show_help: true
+    tmux:
+      session_name: "review:$WORKTREE_NAME"
+      attach: true
+      on_exists: kill  # Always start fresh for reviews
+      windows:
+        - name: diff
+          command: git diff main
+        - name: tests
+          command: npm test
+        - name: editor
+          command: nvim
+```
+
+## Troubleshooting
+
+### Session Already Exists
+
+If you see errors about existing sessions, adjust your `on_exists` behaviour:
+
+```yaml
+tmux:
+  on_exists: switch  # Switch to existing instead of failing
+```
+
+### Windows Not Created
+
+Ensure your `windows` configuration is valid YAML:
+
+```yaml
+windows:
+  - name: shell  # Note the hyphen for list items
+    command: zsh
+  - name: editor
+    command: nvim
+```
+
+### Session Names with Special Characters
+
+Special characters in session names are automatically replaced with `-`:
+
+- tmux: Handles most characters natively
+- zellij: Replaces `/`, `\`, `:` with `-`
+
+<Note>
+Use simple alphanumeric names with hyphens or underscores for best compatibility across multiplexers.
+</Note>
+
+## Advanced Configuration
+
+### Per-Repository Session Config
+
+You can override multiplexer settings per repository by placing configuration in `~/.config/lazyworktree/<repo-slug>.yaml`:
+
+```yaml
+# ~/.config/lazyworktree/myorg-myrepo.yaml
+custom_commands:
+  t:
+    description: Project-specific tmux
+    tmux:
+      session_name: "myproject:$WORKTREE_NAME"
+      windows:
+        - name: backend
+          command: go run ./cmd/server
+        - name: frontend
+          command: npm run dev
+          cwd: $WORKTREE_PATH/web
+```
+
+See [Configuration Overview](/configuration/overview) for more details.
+
+### Combining with Custom Commands
+
+You can combine multiplexer integration with other custom commands:
+
+```yaml
+custom_commands:
+  t:
+    description: Tmux session
+    tmux:
+      session_name: "wt:$WORKTREE_NAME"
+  s:
+    description: Shell
+    command: zsh
+    show_help: true
+  e:
+    description: Editor
+    command: nvim
+    show_help: true
+```
+
+This gives you multiple ways to interact with your worktrees whilst maintaining the multiplexer integration.

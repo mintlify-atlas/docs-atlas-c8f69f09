@@ -1,0 +1,420 @@
+---
+title: Custom Commands
+description: Define custom keybindings and commands in LazyWorktree
+---
+
+Define custom keybindings that run commands in the selected worktree. Commands run interactively (TUI suspends) and appear in the command palette.
+
+<Info>
+  Custom commands take precedence over built-in keys. For example, defining a custom `s` command will override the built-in sort toggle.
+</Info>
+
+## Default Commands
+
+LazyWorktree includes two default custom commands:
+
+- **`t`** - Create/attach to tmux session
+- **`Z`** - Create/attach to zellij session
+
+You can override these by defining `custom_commands.t` or `custom_commands.Z` in your config.
+
+## Configuration Format
+
+Define commands in your `config.yaml`:
+
+```yaml
+custom_commands:
+  e:
+    command: nvim
+    description: Editor
+    show_help: true
+  
+  s:
+    command: zsh
+    description: Shell
+    show_help: true
+  
+  l:
+    command: ls -la
+    description: List files
+    show_help: true
+    wait: true
+```
+
+## Field Reference
+
+<ParamField path="command" type="string" required>
+  The command to execute. Can include environment variables.
+  
+  Example: `make test`, `git status -sb`, `nvim`
+</ParamField>
+
+<ParamField path="description" type="string" default="">
+  Description shown in help screen and command palette.
+</ParamField>
+
+<ParamField path="show_help" type="boolean" default={false}>
+  Show in help screen (triggered with `?`) and footer hints.
+</ParamField>
+
+<ParamField path="wait" type="boolean" default={false}>
+  Wait for keypress after command completes. Useful for quick commands where you want to see output before returning to TUI.
+</ParamField>
+
+<ParamField path="show_output" type="boolean" default={false}>
+  Display command output in the pager instead of running interactively. When true, stdout/stderr are captured and shown in the configured pager. Ignores `wait` setting.
+  
+  Example use case: `git status`, `git log`, or other read-only commands
+</ParamField>
+
+<ParamField path="new_tab" type="boolean" default={false}>
+  Launch command in a new terminal tab. Works with Kitty (with remote control enabled), WezTerm, and iTerm. Can be combined with `tmux` or `zellij` configuration.
+</ParamField>
+
+<ParamField path="tmux" type="object">
+  Configure tmux session for this command. See [Tmux Configuration](#tmux-configuration) below.
+</ParamField>
+
+<ParamField path="zellij" type="object">
+  Configure zellij session for this command. See [Zellij Configuration](#zellij-configuration) below.
+</ParamField>
+
+## Environment Variables
+
+All commands have access to these environment variables:
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `WORKTREE_PATH` | Path to the worktree | `/home/user/.local/share/worktrees/org-repo/feature-x` |
+| `WORKTREE_BRANCH` | Git branch name | `feature-x` |
+| `WORKTREE_NAME` | Worktree directory name | `feature-x` |
+| `MAIN_WORKTREE_PATH` | Main repository path | `/home/user/projects/repo` |
+| `REPO_NAME` | Repository identifier | `chmouel-lazyworktree` |
+
+### Example Usage
+
+```yaml
+custom_commands:
+  e:
+    command: echo "Working in $WORKTREE_NAME on branch $WORKTREE_BRANCH"
+    description: Show info
+    show_help: true
+    wait: true
+```
+
+## Tmux Configuration
+
+Create or attach to tmux sessions with multiple windows:
+
+```yaml
+custom_commands:
+  t:
+    description: Tmux session
+    show_help: true
+    tmux:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: claude
+          command: claude
+        - name: shell
+          command: zsh
+        - name: lazygit
+          command: lazygit
+```
+
+### Tmux Fields
+
+<ParamField path="tmux.session_name" type="string" default="wt:$WORKTREE_NAME">
+  Session name. Environment variables are expanded. Special characters are replaced with hyphens.
+</ParamField>
+
+<ParamField path="tmux.attach" type="boolean" default={true}>
+  Attach immediately to the session. If `false`, shows a modal with attachment instructions.
+</ParamField>
+
+<ParamField path="tmux.on_exists" type="string" default="switch">
+  Behaviour when session already exists.
+  
+  **Options:**
+  - `switch` - Switch to existing session
+  - `attach` - Attach to existing session
+  - `kill` - Kill existing session and create new one
+  - `new` - Create new session with incremented name
+</ParamField>
+
+<ParamField path="tmux.windows" type="array" default={[{"name": "shell"}]}>
+  Window definitions for the session. If empty, creates a single "shell" window.
+</ParamField>
+
+### Tmux Window Fields
+
+<ParamField path="windows[].name" type="string" default="window-N">
+  Window name. Supports environment variables.
+</ParamField>
+
+<ParamField path="windows[].command" type="string" default="">
+  Command to run in the window. Empty uses your default shell.
+</ParamField>
+
+<ParamField path="windows[].cwd" type="string" default="$WORKTREE_PATH">
+  Working directory for the window. Supports environment variables.
+</ParamField>
+
+## Zellij Configuration
+
+Create or attach to zellij sessions with multiple tabs:
+
+```yaml
+custom_commands:
+  Z:
+    description: Zellij session
+    show_help: true
+    zellij:
+      session_name: "wt:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: claude
+          command: claude
+        - name: shell
+          command: zsh
+        - name: lazygit
+          command: lazygit
+```
+
+### Zellij Fields
+
+<ParamField path="zellij.session_name" type="string" default="wt:$WORKTREE_NAME">
+  Session name. Environment variables are expanded. Characters `/`, `\`, `:` are replaced with hyphens.
+</ParamField>
+
+<ParamField path="zellij.attach" type="boolean" default={true}>
+  Attach immediately to the session. If `false`, shows a modal with attachment instructions.
+</ParamField>
+
+<ParamField path="zellij.on_exists" type="string" default="switch">
+  Behaviour when session already exists.
+  
+  **Options:**
+  - `switch` - Switch to existing session
+  - `attach` - Attach to existing session  
+  - `kill` - Kill existing session and create new one
+  - `new` - Create new session with incremented name
+</ParamField>
+
+<ParamField path="zellij.windows" type="array" default={[{"name": "shell"}]}>
+  Tab definitions for the session. If empty, creates a single "shell" tab.
+</ParamField>
+
+### Zellij Window Fields
+
+<ParamField path="windows[].name" type="string" default="window-N">
+  Tab name. Supports environment variables.
+</ParamField>
+
+<ParamField path="windows[].command" type="string" default="">
+  Command to run in the tab. Empty uses your default shell.
+</ParamField>
+
+<ParamField path="windows[].cwd" type="string" default="$WORKTREE_PATH">
+  Working directory for the tab. Supports environment variables.
+</ParamField>
+
+## Key Formats
+
+Supported key formats:
+
+### Single Keys
+
+```yaml
+custom_commands:
+  e:    # Letter e
+    command: nvim
+  
+  s:    # Letter s
+    command: zsh
+  
+  T:    # Capital T (Shift+T)
+    command: make test
+```
+
+### Modifier Combinations
+
+```yaml
+custom_commands:
+  "ctrl+e":
+    command: nvim
+    description: Open editor with Ctrl+E
+  
+  "alt+t":
+    command: make test
+    description: Run tests with Alt+T
+    wait: true
+  
+  "ctrl+shift+s":
+    command: git status -sb
+    description: Git status
+    show_output: true
+```
+
+### Special Keys
+
+```yaml
+custom_commands:
+  enter:
+    command: git status
+  
+  esc:
+    command: echo "Escape pressed"
+  
+  tab:
+    command: ls -la
+  
+  space:
+    command: make build
+```
+
+## Complete Examples
+
+### Simple Commands
+
+```yaml
+custom_commands:
+  s:
+    command: zsh
+    description: Open shell
+    show_help: true
+  
+  t:
+    command: make test
+    description: Run tests
+    show_help: false
+    wait: true
+  
+  l:
+    command: ls -la
+    description: List files
+    show_help: true
+    wait: true
+  
+  "ctrl+t":
+    command: git status -sb
+    description: Status
+    show_help: true
+    show_output: true
+```
+
+### Tmux Session with Multiple Windows
+
+```yaml
+custom_commands:
+  T:
+    description: Development session
+    show_help: true
+    tmux:
+      session_name: "dev:$WORKTREE_NAME"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: editor
+          command: nvim
+        - name: shell
+          command: zsh
+        - name: tests
+          command: npm run test:watch
+        - name: server
+          command: npm run dev
+```
+
+### Zellij Session with Custom Working Directories
+
+```yaml
+custom_commands:
+  Z:
+    description: Zellij workspace
+    show_help: true
+    zellij:
+      session_name: "work:$WORKTREE_BRANCH"
+      attach: true
+      on_exists: switch
+      windows:
+        - name: editor
+          command: nvim
+          cwd: $WORKTREE_PATH/src
+        - name: tests
+          command: npm test
+          cwd: $WORKTREE_PATH
+        - name: docs
+          command: zsh
+          cwd: $WORKTREE_PATH/docs
+```
+
+### Open in New Terminal Tab
+
+```yaml
+custom_commands:
+  c:
+    command: claude
+    description: Claude Code
+    new_tab: true
+    show_help: true
+  
+  "ctrl+c":
+    command: code .
+    description: VS Code
+    new_tab: true
+```
+
+<Note>
+  The `new_tab` feature requires:
+  - **Kitty** with remote control enabled
+  - **WezTerm**
+  - **iTerm**
+</Note>
+
+### Show Output in Pager
+
+```yaml
+custom_commands:
+  "ctrl+l":
+    command: git log --oneline -20
+    description: Recent commits
+    show_help: true
+    show_output: true
+  
+  "ctrl+d":
+    command: git diff
+    description: Show diff
+    show_help: true
+    show_output: true
+```
+
+## Session Prefix
+
+The command palette lists tmux/zellij sessions matching the `session_prefix` (default: `wt-`):
+
+```yaml
+session_prefix: "wt-"
+```
+
+Change this if you use a different naming convention:
+
+```yaml
+session_prefix: "dev-"
+```
+
+## Key Precedence
+
+<Warning>
+  Custom commands override built-in keys. If you define a custom `s` command, the built-in sort toggle will no longer work on the `s` key.
+</Warning>
+
+Built-in keys that are commonly overridden:
+- `s` - Sort mode toggle
+- `t` - Default tmux command
+- `Z` - Default zellij command
+- `l` - Layout toggle
+
+Consider using modifier combinations (like `ctrl+s`) to avoid conflicts with built-in keys.

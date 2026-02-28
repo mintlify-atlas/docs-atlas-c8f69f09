@@ -1,0 +1,212 @@
+---
+title: Repository .wt Files
+description: Repository-specific hooks and commands using .wt files
+---
+
+The `.wt` file allows you to define repository-specific commands that run when creating or deleting worktrees. This format is inspired by [wt](https://github.com/taecontrol/wt).
+
+## File Location
+
+Place a `.wt` file in the root of your repository (alongside `.git`):
+
+```
+my-repo/
+├── .git/
+├── .wt          ← Repository-specific hooks
+├── src/
+└── package.json
+```
+
+## File Format
+
+The `.wt` file uses YAML format:
+
+```yaml
+init_commands:
+  - link_topsymlinks
+  - cp $MAIN_WORKTREE_PATH/.env $WORKTREE_PATH/.env
+  - npm install
+  - code .
+
+terminate_commands:
+  - echo "Cleaning up $WORKTREE_NAME"
+  - rm -rf $WORKTREE_PATH/tmp/*
+```
+
+## Initialisation Commands
+
+Commands in `init_commands` run after creating a new worktree:
+
+```yaml
+init_commands:
+  - link_topsymlinks                                    # Symlink config files
+  - cp $MAIN_WORKTREE_PATH/.env $WORKTREE_PATH/.env   # Copy environment
+  - npm install                                         # Install dependencies
+  - npm run setup                                       # Run setup script
+  - code .                                              # Open in VS Code
+```
+
+### Execution Order
+
+1. Global `init_commands` from config file
+2. Repository-specific `init_commands` from `.wt` file
+
+## Termination Commands
+
+Commands in `terminate_commands` run before deleting a worktree:
+
+```yaml
+terminate_commands:
+  - echo "Cleaning up $WORKTREE_NAME"       # Log cleanup
+  - rm -rf $WORKTREE_PATH/tmp/*              # Remove temporary files
+  - docker-compose down                       # Stop containers
+```
+
+### Execution Order
+
+1. Global `terminate_commands` from config file
+2. Repository-specific `terminate_commands` from `.wt` file
+
+## Environment Variables
+
+All commands have access to the following environment variables:
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `WORKTREE_PATH` | Path to the worktree | `/home/user/.local/share/worktrees/org-repo/feature-x` |
+| `WORKTREE_BRANCH` | Name of the git branch | `feature-x` |
+| `WORKTREE_NAME` | Name of the worktree (directory basename) | `feature-x` |
+| `MAIN_WORKTREE_PATH` | Path to the main repository | `/home/user/projects/repo` |
+| `REPO_NAME` | Repository key (from GitHub/GitLab or local hash) | `chmouel-lazyworktree` |
+
+### Example Usage
+
+```yaml
+init_commands:
+  # Copy environment file from main worktree
+  - cp $MAIN_WORKTREE_PATH/.env $WORKTREE_PATH/.env
+  
+  # Create branch-specific configuration
+  - echo "BRANCH=$WORKTREE_BRANCH" >> $WORKTREE_PATH/.env.local
+  
+  # Log creation
+  - echo "Created worktree: $WORKTREE_NAME in $WORKTREE_PATH"
+```
+
+## Built-in Commands
+
+### link_topsymlinks
+
+The special `link_topsymlinks` command performs several helpful setup tasks:
+
+1. **Symlinks untracked/ignored files** from main worktree root
+2. **Symlinks non-empty editor configs:**
+   - `.vscode/`
+   - `.idea/`
+   - `.cursor/`
+   - `.claude/settings.local.json`
+3. **Creates `tmp/` directory** in the worktree
+4. **Runs `direnv allow`** if `.envrc` exists
+
+Usage:
+
+```yaml
+init_commands:
+  - link_topsymlinks  # Always run this first for best results
+  - npm install
+```
+
+<Info>
+  `link_topsymlinks` is the only built-in command. All other commands are executed as shell commands.
+</Info>
+
+## Security: Trust On First Use (TOFU)
+
+Since `.wt` files execute arbitrary commands, LazyWorktree uses Trust On First Use (TOFU) security.
+
+### How TOFU Works
+
+1. **First encounter**: You'll be prompted to Trust, Block, or Cancel
+2. **Hash stored**: Trusted hashes stored in `~/.local/share/lazyworktree/trusted.json`
+3. **Subsequent runs**: Commands execute automatically if hash matches
+4. **Modified file**: Prompted again if `.wt` file changes
+
+### Trust Modes
+
+Configure behaviour via `trust_mode` setting:
+
+```yaml
+trust_mode: tofu  # Options: tofu, never, always
+```
+
+| Mode | Behaviour |
+|------|----------|
+| `tofu` | Prompt on first use or when commands change (default) |
+| `never` | Skip all commands from `.wt` files |
+| `always` | Execute without prompting (use with caution) |
+
+<Warning>
+  Setting `trust_mode: always` will execute `.wt` commands without any prompts. Only use this if you fully trust all repositories you work with.
+</Warning>
+
+For more details on TOFU security, see [TOFU Security](/advanced/tofu-security).
+
+## Example Configurations
+
+### Node.js Project
+
+```yaml
+init_commands:
+  - link_topsymlinks
+  - cp $MAIN_WORKTREE_PATH/.env.example $WORKTREE_PATH/.env
+  - npm install
+  - npm run build
+
+terminate_commands:
+  - npm run clean
+  - rm -rf node_modules/.cache
+```
+
+### Docker-based Project
+
+```yaml
+init_commands:
+  - link_topsymlinks
+  - docker-compose build
+  - docker-compose up -d
+  - echo "Containers started for $WORKTREE_BRANCH"
+
+terminate_commands:
+  - docker-compose down
+  - docker-compose rm -f
+```
+
+### Python Project
+
+```yaml
+init_commands:
+  - link_topsymlinks
+  - python -m venv .venv
+  - source .venv/bin/activate && pip install -r requirements.txt
+  - cp $MAIN_WORKTREE_PATH/.env.example $WORKTREE_PATH/.env
+
+terminate_commands:
+  - rm -rf .venv
+  - rm -rf __pycache__
+```
+
+### Multiple IDEs
+
+```yaml
+init_commands:
+  - link_topsymlinks  # Symlinks .vscode, .idea, .cursor configs
+  - npm install
+  - echo "Worktree $WORKTREE_NAME ready"
+  
+terminate_commands:
+  - echo "Removing worktree: $WORKTREE_NAME"
+```
+
+<Tip>
+  The `link_topsymlinks` command automatically handles editor configurations, so you don't need to manually symlink `.vscode`, `.idea`, or other editor directories.
+</Tip>

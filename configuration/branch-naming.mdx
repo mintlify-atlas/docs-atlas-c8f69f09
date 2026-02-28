@@ -1,0 +1,247 @@
+---
+title: Branch Naming Conventions
+description: Branch naming rules, templates, and automatic generation
+---
+
+LazyWorktree provides flexible branch naming with automatic sanitisation, templates, and AI-powered name generation.
+
+## Character Conversion
+
+Special characters are automatically converted to hyphens for Git compatibility:
+
+| Input | Converted |
+|-------|----------|
+| `feature.new` | `feature-new` |
+| `bug fix here` | `bug-fix-here` |
+| `feature:test` | `feature-test` |
+| `user@domain` | `user-domain` |
+| `fix/bug` | `fix-bug` |
+
+### Conversion Rules
+
+1. **Special characters** → hyphens (`-`)
+2. **Leading/trailing hyphens** → removed
+3. **Consecutive hyphens** → collapsed to single hyphen
+4. **Length limits** applied (see below)
+
+## Length Limits
+
+Branch names are automatically truncated:
+
+- **Manual entry**: 50 characters maximum
+- **Auto-generated**: 100 characters maximum
+
+## Branch Name Templates
+
+Templates control how branch names are generated from issues and PRs.
+
+### Issue Branch Template
+
+Configure via `issue_branch_name_template`:
+
+```yaml
+issue_branch_name_template: "issue-{number}-{title}"
+```
+
+**Available placeholders:**
+- `{number}` - The issue number
+- `{title}` - The sanitised issue title
+- `{generated}` - AI-generated title (falls back to `{title}` if not available)
+
+**Examples:**
+
+```yaml
+# Default format
+issue_branch_name_template: "issue-{number}-{title}"
+# Result: issue-123-fix-login-bug
+
+# With AI-generated title
+issue_branch_name_template: "issue-{number}-{generated}"
+# Result: issue-123-fix-auth-bug (AI title)
+
+# Minimal format
+issue_branch_name_template: "{number}-{title}"
+# Result: 123-fix-login-bug
+
+# Custom prefix
+issue_branch_name_template: "feat-{number}-{title}"
+# Result: feat-123-fix-login-bug
+```
+
+### PR Branch Template
+
+Configure via `pr_branch_name_template`:
+
+```yaml
+pr_branch_name_template: "pr-{number}-{title}"
+```
+
+**Available placeholders:**
+- `{number}` - The PR number
+- `{title}` - The sanitised PR title
+- `{generated}` - AI-generated title (falls back to `{title}` if not available)
+- `{pr_author}` - The PR author's username (sanitised)
+
+**Examples:**
+
+```yaml
+# Default format
+pr_branch_name_template: "pr-{number}-{title}"
+# Result: pr-123-fix-login-bug
+
+# With AI-generated title
+pr_branch_name_template: "pr-{number}-{generated}"
+# Result: pr-123-fix-auth-bug (AI title)
+
+# Include author
+pr_branch_name_template: "pr-{number}-{pr_author}-{title}"
+# Result: pr-123-alice-fix-login-bug
+
+# Author first
+pr_branch_name_template: "{pr_author}-pr-{number}-{title}"
+# Result: alice-pr-123-fix-login-bug
+```
+
+## Template Examples
+
+Given an issue/PR with:
+- **Number**: 2
+- **Title**: "Add AI session management"
+- **Generated title**: "feat-ai-session-manager"
+- **Author**: @alice
+
+| Template | Result |
+|----------|--------|
+| `issue-{number}-{title}` | `issue-2-add-ai-session-management` |
+| `issue-{number}-{generated}` | `issue-2-feat-ai-session-manager` |
+| `pr-{number}-{generated}` | `pr-2-feat-ai-session-manager` |
+| `pr-{number}-{pr_author}-{title}` | `pr-2-alice-add-ai-session-management` |
+| `{pr_author}/{number}-{title}` | `alice/2-add-ai-session-management` |
+
+## Automatic Branch Name Generation
+
+Configure AI-powered branch name generation using `branch_name_script`.
+
+### Basic Configuration
+
+```yaml
+# For PRs/issues: generate a title (used in {generated} placeholder)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this PR or issue. Output only the title (like feat-session-manager), nothing else.'"
+
+# Use the generated title in templates
+pr_branch_name_template: "pr-{number}-{generated}"
+issue_branch_name_template: "issue-{number}-{generated}"
+```
+
+### How It Works
+
+**For issues/PRs:**
+1. Script receives issue/PR title + body on stdin
+2. Script outputs a title
+3. Title is available via `{generated}` placeholder
+4. Template uses `{generated}` to construct final name
+
+**For diffs (creating from changes):**
+1. Script receives `git diff` output on stdin
+2. Script outputs a complete branch name
+3. Name is used directly (no template)
+
+### Environment Variables
+
+The script has access to:
+
+| Variable | Description |
+|----------|-------------|
+| `LAZYWORKTREE_TYPE` | Creation type: `pr`, `issue`, or `diff` |
+| `LAZYWORKTREE_NUMBER` | Issue/PR number (empty for diffs) |
+| `LAZYWORKTREE_TEMPLATE` | Configured template (e.g., `pr-{number}-{title}`) |
+| `LAZYWORKTREE_SUGGESTED_NAME` | Template-generated name using original title |
+
+### Advanced Configuration
+
+Different behaviour for diffs vs issues/PRs:
+
+```yaml
+branch_name_script: |
+  if [ "$LAZYWORKTREE_TYPE" = "diff" ]; then
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a complete branch name for this diff'
+  else
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title (no issue-/pr- prefix). Output only the title.'
+  fi
+```
+
+### Script Requirements
+
+- **Input**: Receives content on stdin
+- **Output**: First line of stdout is used (whitespace trimmed, case preserved)
+- **Timeout**: 30 seconds
+- **Fallback**: If script fails, `{generated}` falls back to `{title}`
+
+### Recommended Models
+
+<Tip>
+  Smaller, faster models suffice for branch name generation. Consider:
+  - `gemini:gemini-2.5-flash-lite`
+  - `claude:claude-3-haiku`
+  - `openai:gpt-4o-mini`
+</Tip>
+
+## Worktree Note Generation
+
+Generate automatic notes when creating worktrees from issues/PRs:
+
+```yaml
+worktree_note_script: "aichat -m gemini:gemini-2.5-flash-lite 'Summarise this ticket as concise implementation notes.'"
+```
+
+**Environment variables:**
+- `LAZYWORKTREE_TYPE` - Source type (`pr` or `issue`)
+- `LAZYWORKTREE_NUMBER` - PR/issue number
+- `LAZYWORKTREE_TITLE` - PR/issue title
+- `LAZYWORKTREE_URL` - PR/issue URL
+
+**Input**: Issue/PR title + body on stdin
+
+**Output**: Note text (if script fails or outputs nothing, creation continues without a note)
+
+## Complete Example
+
+```yaml
+# Branch naming templates
+issue_branch_name_template: "issue-{number}-{generated}"
+pr_branch_name_template: "pr-{number}-{generated}"
+
+# AI-powered name generation
+branch_name_script: |
+  if [ "$LAZYWORKTREE_TYPE" = "diff" ]; then
+    # For diffs: generate complete branch name
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a short git branch name (no spaces, use hyphens) for this diff. Output only the branch name, nothing else.'
+  else
+    # For issues/PRs: generate title for {generated} placeholder
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this issue or PR. Output only the title (like feat-session-manager), nothing else.'
+  fi
+
+# Auto-generate worktree notes
+worktree_note_script: "aichat -m gemini:gemini-2.5-flash-lite 'Summarise this ticket as concise implementation notes.'"
+```
+
+## Character Conversion Table
+
+All non-alphanumeric characters (except hyphens and underscores) are converted:
+
+| Character | Converted | Character | Converted |
+|-----------|-----------|-----------|----------|
+| Space | `-` | `/` | `-` |
+| `.` | `-` | `\` | `-` |
+| `:` | `-` | `@` | `-` |
+| `*` | `-` | `#` | `-` |
+| `?` | `-` | `!` | `-` |
+| `[` | `-` | `]` | `-` |
+| `{` | `-` | `}` | `-` |
+| `(` | `-` | `)` | `-` |
+| `~` | `-` | `^` | `-` |
+| `<` | `-` | `>` | `-` |
+
+<Info>
+  Only alphanumeric characters, hyphens (`-`), underscores (`_`), and dots (`.`) are preserved. All other characters become hyphens.
+</Info>

@@ -1,0 +1,74 @@
+---
+title: Configuration Overview
+description: Understanding LazyWorktree's flexible configuration system
+---
+
+LazyWorktree provides a flexible configuration system with multiple levels of precedence, allowing you to customize behaviour globally, per-repository, or via command-line flags.
+
+## Configuration Precedence
+
+Settings are resolved in the following order (highest to lowest priority):
+
+1. **CLI flags** - Command-line arguments passed with `--config`
+2. **Git local configuration** - Repository-specific settings using `git config --local`
+3. **Git global configuration** - User-wide settings using `git config --global`
+4. **YAML configuration file** - `~/.config/lazyworktree/config.yaml`
+5. **Built-in defaults** - Sensible defaults for all settings
+
+This means CLI flags override everything, followed by git config (local first, then global), then your YAML file, and finally the built-in defaults.
+
+## Configuration File Location
+
+The default configuration file location is:
+
+```
+~/.config/lazyworktree/config.yaml
+```
+
+You can override this location using the `--config` flag:
+
+```bash
+lazyworktree --config /path/to/custom-config.yaml
+```
+
+## Example Configuration
+
+For a complete example configuration with all available options, see [config.example.yaml](https://github.com/chmouel/lazyworktree/blob/main/config.example.yaml) in the source repository.
+
+## Configuration Sections
+
+<CardGroup cols={2}>
+  <Card title="Settings" icon="sliders" href="/configuration/settings">
+    All configuration settings organised by category
+  </Card>
+  
+  <Card title="Themes" icon="palette" href="/configuration/themes">
+    Built-in themes and custom theme system
+  </Card>
+  
+  <Card title="Git Config" icon="code-branch" href="/configuration/git-config">
+    Using git config for settings
+  </Card>
+  
+  <Card title=".wt Files" icon="file-code" href="/configuration/wt-files">
+    Repository-specific hooks and commands
+  </Card>
+  
+  <Card title="Branch Naming" icon="code-compare" href="/configuration/branch-naming">
+    Branch naming conventions and templates
+  </Card>
+  
+  <Card title="Custom Commands" icon="keyboard" href="/configuration/custom-commands">
+    Define custom keybindings and commands
+  </Card>
+</CardGroup>
+
+## Default Worktree Location
+
+By default, worktrees are created in:
+
+```
+~/.local/share/worktrees/<organization>-<repo_name>
+```
+
+You can customise this location using the `worktree_dir` setting.

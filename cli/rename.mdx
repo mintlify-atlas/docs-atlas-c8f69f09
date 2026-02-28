@@ -1,0 +1,44 @@
+---
+title: lazyworktree rename
+description: Rename a worktree without launching the TUI
+---
+
+Rename a worktree directory without launching the TUI. The branch is renamed only if the current worktree directory name matches the branch name.
+
+## Syntax
+
+```bash
+lazyworktree rename [old-name] new-name
+```
+
+## Arguments
+
+<ParamField path="new-name" type="string" required>
+  New worktree name. It is sanitised to lowercase letters, numbers, and hyphens. When given as the only argument, the current worktree (detected from the working directory) is renamed.
+</ParamField>
+
+<ParamField path="old-name" type="string">
+  The worktree path, branch name, or directory name to rename. If omitted, auto-detects the current worktree from the working directory.
+</ParamField>
+
+<ParamField path="--silent" type="boolean">
+  Suppress all progress messages to stderr. Useful for scripting and automation.
+</ParamField>
+
+## Examples
+
+```bash
+# Rename current worktree (detected from cwd)
+lazyworktree rename new-feature-name
+
+# Rename by name
+lazyworktree rename feature new-feature-name
+
+# Rename by path
+lazyworktree rename /path/to/worktree new-worktree-name
+```
+
+## Notes
+
+- The branch is renamed only when the current worktree directory name matches the branch name
+- Shell completion suggests available worktree basenames for the first argument

@@ -1,0 +1,157 @@
+---
+title: Themes
+description: Built-in themes and custom theme system
+---
+
+LazyWorktree includes 21 built-in themes and supports custom themes with inheritance.
+
+## Theme Selection
+
+Set the theme in your configuration file:
+
+```yaml
+theme: dracula
+```
+
+Or via command-line flag:
+
+```bash
+lazyworktree --theme nord
+```
+
+Leave the theme setting empty to enable auto-detection based on your terminal background colour:
+
+```yaml
+theme: ""  # Auto-detect (rose-pine for dark, dracula-light for light)
+```
+
+## Built-in Themes
+
+LazyWorktree includes 21 carefully crafted themes:
+
+| Theme | Background | Best For |
+|-------|------------|----------|
+| **dracula** | Dark (#282A36) | Dark terminals, vibrant colours, default fallback |
+| **dracula-light** | White (#FFFFFF) | Light terminals, Dracula colours, default light theme |
+| **narna** | Charcoal (#0D1117) | Dark terminals, blue highlights |
+| **clean-light** | White (#FFFFFF) | Light terminals, cyan accent |
+| **catppuccin-latte** | Soft white (#EFF1F5) | Catppuccin Latte light palette |
+| **rose-pine-dawn** | Warm white (#FAF4ED) | Rosé Pine Dawn warm palette |
+| **one-light** | Light grey (#FAFAFA) | Atom One Light |
+| **everforest-light** | Beige (#F3EFDA) | Everforest nature light |
+| **solarized-dark** | Deep teal (#002B36) | Classic Solarized dark palette |
+| **solarized-light** | Cream (#FDF6E3) | Classic Solarized light palette |
+| **gruvbox-dark** | Dark grey (#282828) | Gruvbox dark, warm accents |
+| **gruvbox-light** | Sand (#FBF1C7) | Gruvbox light, earthy tones |
+| **nord** | Midnight blue (#2E3440) | Nord calm cyan accents |
+| **monokai** | Olive black (#272822) | Monokai bright neon accents |
+| **catppuccin-mocha** | Mocha (#1E1E2E) | Catppuccin Mocha pastels |
+| **modern** | Zinc (#18181B) | Sleek modern dark theme with violet accents |
+| **tokyo-night** | Storm (#24283B) | Tokyo Night Storm with blue highlights |
+| **one-dark** | Dark (#282C34) | Atom One Dark classic palette |
+| **rose-pine** | Midnight (#191724) | Rosé Pine dark and moody |
+| **ayu-mirage** | Mirage (#212733) | Ayu Mirage modern look |
+| **everforest-dark** | Dark (#2D353B) | Everforest nature dark |
+| **kanagawa** | Wave (#1F1F28) | Kanagawa Wave inspired by Japanese art |
+
+## Custom Themes
+
+Define custom themes that inherit from built-in themes or create entirely new colour schemes.
+
+### Inherit from Built-in Theme
+
+Override specific colours whilst inheriting the rest:
+
+```yaml
+custom_themes:
+  my-dark:
+    base: dracula
+    accent: "#FF6B9D"
+    text_fg: "#E8E8E8"
+
+  my-light:
+    base: dracula-light
+    accent: "#0066CC"
+```
+
+### Complete Custom Theme
+
+Define all 11 colour fields for a completely custom theme:
+
+```yaml
+custom_themes:
+  completely-custom:
+    accent: "#00FF00"
+    accent_fg: "#000000"
+    accent_dim: "#2A2A2A"
+    border: "#3A3A3A"
+    border_dim: "#2A2A2A"
+    muted_fg: "#888888"
+    text_fg: "#FFFFFF"
+    success_fg: "#00FF00"
+    warn_fg: "#FFFF00"
+    error_fg: "#FF0000"
+    cyan: "#00FFFF"
+```
+
+### Inherit from Custom Theme
+
+Custom themes can inherit from other custom themes:
+
+```yaml
+custom_themes:
+  base-custom:
+    base: dracula
+    accent: "#FF0000"
+  derived:
+    base: base-custom
+    accent: "#00FF00"
+```
+
+## Colour Fields
+
+All custom theme colour fields (use snake_case in YAML):
+
+| Field | Description |
+|-------|-------------|
+| `accent` | Primary accent colour (highlights, selected items) |
+| `accent_fg` | Foreground colour for text on accent background |
+| `accent_dim` | Dimmed accent colour (selected rows/panels) |
+| `border` | Border colour |
+| `border_dim` | Dimmed border colour |
+| `muted_fg` | Muted text colour (less important text) |
+| `text_fg` | Primary text colour |
+| `success_fg` | Success/positive indicator colour |
+| `warn_fg` | Warning indicator colour |
+| `error_fg` | Error indicator colour |
+| `cyan` | Cyan accent colour |
+
+### Colour Format
+
+Colour values must be in hex format: `#RRGGBB` or `#RGB`
+
+### Inheritance Rules
+
+- When using a `base` theme, only specify colours you want to override
+- When not using a `base`, all 11 colour fields are required
+- Custom themes appear alongside built-in themes
+- Cannot override built-in theme names
+
+## Syntax Themes
+
+When using delta as your `git_pager`, LazyWorktree automatically selects an appropriate syntax theme to match your UI theme.
+
+To view available delta syntax themes:
+
+```bash
+lazyworktree --show-syntax-themes
+```
+
+You can override the syntax theme manually:
+
+```yaml
+git_pager: delta
+git_pager_args:
+  - --syntax-theme
+  - "OneHalfDark"
+```

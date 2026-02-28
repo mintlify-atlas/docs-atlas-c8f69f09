@@ -1,0 +1,329 @@
+---
+title: CLI Usage Guide
+description: Using LazyWorktree in non-interactive CLI mode
+---
+
+Whilst LazyWorktree is primarily a TUI application, it also provides a comprehensive command-line interface for non-interactive worktree management. This is particularly useful for scripting and automation.
+
+## Config Overrides
+
+You can override configuration values directly from the command line using the `--config` flag:
+
+```bash
+lazyworktree --config lw.theme=nord --config lw.sort_mode=active
+```
+
+You can also override the worktree directory location:
+
+```bash
+lazyworktree --worktree-dir ~/worktrees
+```
+
+<Tip>
+The `--config` flag can be used multiple times to override multiple configuration values in a single command.
+</Tip>
+
+## Listing Worktrees
+
+### Table Output (Default)
+
+The default list format provides a human-readable table:
+
+```bash
+lazyworktree list
+# or use the alias
+lazyworktree ls
+```
+
+### Pristine Output (Scripting)
+
+For scripting purposes, use `--pristine` to output only worktree paths, one per line:
+
+```bash
+lazyworktree list --pristine
+```
+
+This format is ideal for shell scripts and automation:
+
+```bash
+for worktree in $(lazyworktree list --pristine); do
+  echo "Processing: $worktree"
+  # Your commands here
+done
+```
+
+### JSON Output
+
+For structured data consumption, use `--json` to output worktree information in JSON format:
+
+```bash
+lazyworktree list --json
+```
+
+<Note>
+The `--pristine` and `--json` flags are mutually exclusive. Use one or the other depending on your needs.
+</Note>
+
+## Creating Worktrees
+
+LazyWorktree provides flexible worktree creation with multiple options:
+
+### Basic Creation
+
+```bash
+# Auto-generated name from current branch
+lazyworktree create
+
+# Explicit name
+lazyworktree create my-feature
+
+# With uncommitted changes
+lazyworktree create my-feature --with-change
+```
+
+### From Branch
+
+```bash
+# Create from specific branch
+lazyworktree create --from-branch main my-feature
+```
+
+### From Pull Request
+
+```bash
+# Create from specific PR number
+lazyworktree create --from-pr 123
+
+# Interactively select PR
+lazyworktree create -P
+
+# Pre-filter interactive PR selection
+lazyworktree create -P -q "dark"
+```
+
+<Note>
+PR creation always uses the generated worktree name. The local branch name is conditional: if you are the PR author, LazyWorktree keeps the PR branch name; otherwise it uses the generated name. When requester identity cannot be resolved, LazyWorktree falls back to the PR branch name.
+</Note>
+
+### From Issue
+
+```bash
+# Create from specific issue (base: current branch)
+lazyworktree create --from-issue 42
+
+# From issue with explicit base branch
+lazyworktree create --from-issue 42 --from-branch main
+
+# Interactively select issue
+lazyworktree create -I
+
+# Interactive with explicit base
+lazyworktree create -I --from-branch main
+
+# Pre-filter interactive issue selection
+lazyworktree create -I --query "login"
+```
+
+### Branch Only (No Worktree)
+
+Sometimes you want to create a branch without creating a worktree directory:
+
+```bash
+# From PR, branch only
+lazyworktree create --from-pr 123 --no-workspace
+
+# From issue, branch only
+lazyworktree create --from-issue 42 --no-workspace
+
+# Interactive issue, branch only
+lazyworktree create -I --no-workspace
+
+# Interactive PR, branch only
+lazyworktree create -P --no-workspace
+```
+
+### Post-Creation Commands
+
+Run a command after successful worktree creation using `--exec`:
+
+```bash
+# Run tests after creation
+lazyworktree create my-feature --exec 'npm test'
+
+# Install dependencies
+lazyworktree create my-feature --exec 'npm install'
+```
+
+<Note>
+The `--exec` command runs in the new worktree directory, or in the current directory when used with `--no-workspace`. The shell mode follows your current shell (`zsh -ilc`, `bash -ic`, or `-lc` otherwise).
+</Note>
+
+## Deleting Worktrees
+
+Delete worktrees with optional branch retention:
+
+```bash
+# Delete worktree and branch
+lazyworktree delete
+
+# Delete worktree only, keep branch
+lazyworktree delete --no-branch
+```
+
+<Warning>
+Deleting a worktree is permanent. Ensure you have committed or stashed any important changes before deletion.
+</Warning>
+
+## Renaming Worktrees
+
+Rename worktrees and their associated branches:
+
+```bash
+# Rename current worktree (detected from cwd)
+lazyworktree rename new-feature-name
+
+# Rename specific worktree by name
+lazyworktree rename feature new-feature-name
+
+# Rename specific worktree by path
+lazyworktree rename /path/to/worktree new-worktree-name
+```
+
+<Note>
+When renaming, the branch is renamed only if the current worktree directory name matches the branch name. This prevents accidentally renaming branches that don't follow the naming convention.
+</Note>
+
+## Running Commands in Worktrees
+
+The `exec` command allows you to execute shell commands or trigger custom command keys in worktrees from the CLI.
+
+### Execute Shell Commands
+
+Run arbitrary shell commands in a specific worktree:
+
+```bash
+# Run in specific worktree
+lazyworktree exec --workspace=my-feature "make test"
+lazyworktree exec -w my-feature "git status"
+
+# Auto-detect worktree from current directory
+cd ~/worktrees/repo/my-feature
+lazyworktree exec "npm run build"
+```
+
+### Trigger Custom Command Keys
+
+Trigger custom command key actions (like tmux or zellij sessions) from the CLI:
+
+```bash
+# Launch tmux session
+lazyworktree exec --key=t --workspace=my-feature
+
+# Launch zellij session
+lazyworktree exec -k z -w my-feature
+
+# Auto-detect worktree and trigger key action
+cd ~/worktrees/repo/my-feature
+lazyworktree exec --key=t
+```
+
+### How exec Works
+
+- **`--workspace` (or `-w`)** - Specify target worktree by name or path
+- **Auto-detection** - If `--workspace` is not provided, the worktree is detected from the current directory
+- **Command argument** - Shell command to execute (positional argument)
+- **`--key` (or `-k`)** - Trigger a custom command key instead of running a shell command
+- **Environment variables** - Sets `WORKTREE_*` environment variables (same as custom commands in the TUI)
+
+<Note>
+The `exec` command supports all custom command types: shell, tmux, zellij, and show-output. However, `new-tab` commands are not supported in CLI mode.
+</Note>
+
+### Examples
+
+```bash
+# Run tests in multiple worktrees
+for wt in $(lazyworktree list --pristine); do
+  lazyworktree exec -w "$wt" "npm test"
+done
+
+# Start tmux session for a worktree
+lazyworktree exec --key=t -w feature-branch
+
+# Build project in current worktree
+lazyworktree exec "make build"
+
+# Check status of specific worktree
+lazyworktree exec -w my-feature "git status -sb"
+```
+
+## Environment Variables
+
+When using `--exec` or the `exec` command, the following environment variables are available:
+
+- `WORKTREE_BRANCH` - The branch name for the worktree
+- `WORKTREE_PATH` - Full path to the worktree directory
+- `WORKTREE_NAME` - Name of the worktree
+- `MAIN_WORKTREE_PATH` - Path to the main/root worktree
+- `REPO_NAME` - Name of the repository
+
+These variables can be used in your commands for dynamic behaviour.
+
+## Scripting Examples
+
+### Clean Up Merged Worktrees
+
+```bash
+#!/bin/bash
+# Clean up worktrees that have been merged
+
+for worktree in $(lazyworktree list --pristine); do
+  cd "$worktree" || continue
+  
+  # Check if branch is merged
+  if git branch --merged main | grep -q "$(git branch --show-current)"; then
+    echo "Deleting merged worktree: $worktree"
+    lazyworktree delete --workspace="$worktree"
+  fi
+done
+```
+
+### Batch Command Execution
+
+```bash
+#!/bin/bash
+# Run a command in all worktrees
+
+COMMAND="$1"
+
+if [ -z "$COMMAND" ]; then
+  echo "Usage: $0 <command>"
+  exit 1
+fi
+
+for worktree in $(lazyworktree list --pristine); do
+  echo "==> Running in: $worktree"
+  lazyworktree exec -w "$worktree" "$COMMAND"
+done
+```
+
+### JSON Processing
+
+```bash
+#!/bin/bash
+# Process worktree information from JSON output
+
+lazyworktree list --json | jq -r '.[] | "\(.name): \(.branch)"'
+```
+
+## Complete CLI Documentation
+
+For the complete CLI reference including all flags and options, consult:
+
+- `man lazyworktree` - Full man page documentation
+- `lazyworktree --help` - Quick help output
+- `lazyworktree <command> --help` - Command-specific help
+
+<Tip>
+Package manager installations (deb, rpm, AUR) include man pages and shell completions automatically.
+</Tip>

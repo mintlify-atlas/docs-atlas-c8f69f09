@@ -1,0 +1,121 @@
+---
+title: Config Overrides
+description: Override config values from the command line
+---
+
+Override any configuration value from the command line using the `--config` flag. This has the highest precedence and overrides all other configuration sources (YAML files, git config, defaults).
+
+## Syntax
+
+```bash
+lazyworktree --config lw.key=value [command]
+```
+
+## Multiple Overrides
+
+You can specify multiple `--config` flags in a single command:
+
+```bash
+lazyworktree --config lw.key1=value1 --config lw.key2=value2 [command]
+```
+
+## Supported Keys
+
+All configuration keys use the `lw.` prefix:
+
+- `lw.theme` - UI theme name
+- `lw.worktree_dir` - Worktree root directory
+- `lw.sort_mode` - Sort mode (path/active/switched)
+- `lw.auto_refresh` - Auto-refresh enabled (true/false)
+- `lw.disable_pr` - Disable PR/MR fetching (true/false)
+- `lw.search_auto_select` - Search auto-select (true/false)
+- `lw.fuzzy_finder_input` - Fuzzy finder suggestions (true/false)
+- `lw.icon_set` - Icon set (nerd-font-v3/text)
+- `lw.palette_mru` - Command palette MRU (true/false)
+- `lw.palette_mru_limit` - MRU limit (integer)
+- `lw.git_pager` - Git pager command
+- `lw.git_pager_args` - Git pager arguments (comma-separated)
+- `lw.git_pager_interactive` - Interactive pager (true/false)
+- `lw.git_pager_command_mode` - Command mode pager (true/false)
+- `lw.pager` - Pager command
+- `lw.editor` - Editor command
+- `lw.max_untracked_diffs` - Max untracked diffs (integer)
+- `lw.max_diff_chars` - Max diff characters (integer)
+- `lw.refresh_interval_seconds` - Refresh interval (integer)
+- `lw.trust_mode` - Trust mode (tofu/never/always)
+- `lw.merge_method` - Merge method (rebase/merge)
+- `lw.branch_name_script` - Branch name script path
+- `lw.worktree_note_script` - Worktree note script path
+- `lw.worktree_notes_path` - Worktree notes path
+- `lw.issue_branch_name_template` - Issue branch template
+- `lw.pr_branch_name_template` - PR branch template
+- `lw.session_prefix` - Session prefix
+- `lw.init_commands` - Init commands (comma-separated)
+- `lw.terminate_commands` - Terminate commands (comma-separated)
+
+## Examples
+
+### Single Override
+
+```bash
+# Override theme
+lazyworktree --config lw.theme=nord
+
+# Override sort mode
+lazyworktree --config lw.sort_mode=active
+
+# Override worktree directory
+lazyworktree --config lw.worktree_dir=~/my-worktrees
+```
+
+### Multiple Overrides
+
+```bash
+# Theme and sort mode
+lazyworktree --config lw.theme=nord --config lw.sort_mode=active
+
+# Disable PR fetching and set theme
+lazyworktree --config lw.disable_pr=true --config lw.theme=dracula
+
+# Multiple UI settings
+lazyworktree --config lw.theme=gruvbox-dark \
+  --config lw.icon_set=text \
+  --config lw.fuzzy_finder_input=true
+```
+
+### With Subcommands
+
+```bash
+# Create worktree with config override
+lazyworktree --config lw.worktree_dir=~/worktrees create my-feature
+
+# List worktrees with custom sort
+lazyworktree --config lw.sort_mode=active list
+
+# Delete with custom config
+lazyworktree --config lw.trust_mode=always delete my-feature
+```
+
+### Combining with Global Flags
+
+```bash
+# Config override + global flag
+lazyworktree --worktree-dir ~/worktrees --config lw.theme=nord
+
+# Multiple sources
+lazyworktree --config-file ~/custom.yaml \
+  --config lw.theme=nord \
+  --config lw.sort_mode=active
+```
+
+## Precedence Order
+
+Configuration values are loaded in this order (highest to lowest):
+
+1. **CLI overrides** (`--config` flag) - highest precedence
+2. Git local configuration (`git config --local`)
+3. Git global configuration (`git config --global`)
+4. YAML configuration file
+5. Built-in defaults
+
+The `--config` flag always wins, overriding all other sources.

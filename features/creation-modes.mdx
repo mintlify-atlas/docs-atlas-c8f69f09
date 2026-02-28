@@ -1,0 +1,270 @@
+---
+title: Creation Modes
+description: Powerful worktree creation options from branches, PRs, and issues
+---
+
+LazyWorktree offers multiple creation modes to fit different workflows. Press **`c`** to open the creation menu.
+
+## Creation Options
+
+<Steps>
+  <Step title="Select Creation Mode">
+    Choose from:
+    - From current branch (with/without uncommitted changes)
+    - Checkout existing branch or create new
+    - From GitHub/GitLab issue
+    - From open PR/MR
+  </Step>
+  
+  <Step title="Configure Options">
+    Depending on the mode, configure:
+    - Branch name (manual or AI-generated)
+    - Base branch
+    - Include uncommitted changes (checkbox)
+  </Step>
+  
+  <Step title="Create Worktree">
+    Confirm to create the worktree in `~/.local/share/worktrees/<org>-<repo>/<name>`
+  </Step>
+</Steps>
+
+## From Current Branch
+
+Create a new worktree from your current branch with optional uncommitted changes.
+
+### Without Uncommitted Changes
+
+Creates a clean worktree from the current branch HEAD:
+
+<Steps>
+  <Step title="Press `c`">
+    Open creation menu
+  </Step>
+  
+  <Step title="Select 'From current branch'">
+    Choose the first option
+  </Step>
+  
+  <Step title="Enter branch name">
+    Type the new branch name (or use AI-generated suggestion)
+  </Step>
+  
+  <Step title="Uncheck 'Include uncommitted changes'">
+    Leave checkbox unchecked for a clean worktree
+  </Step>
+</Steps>
+
+### With Uncommitted Changes
+
+Creates a worktree and carries over your uncommitted changes:
+
+<Steps>
+  <Step title="Press `c`">
+    Open creation menu
+  </Step>
+  
+  <Step title="Select 'From current branch'">
+    Choose the first option
+  </Step>
+  
+  <Step title="Enter branch name">
+    Type the new branch name
+  </Step>
+  
+  <Step title="Check 'Include uncommitted changes'">
+    Tick the checkbox to copy uncommitted changes
+  </Step>
+</Steps>
+
+<Note>
+Uncommitted changes are copied using `git stash` and `git stash pop` internally.
+</Note>
+
+## Checkout Existing Branch or Create New
+
+Select from existing branches or create a new branch from any base.
+
+<Tabs>
+  <Tab title="Checkout Existing">
+    <Steps>
+      <Step title="Press `c`">
+        Open creation menu
+      </Step>
+      
+      <Step title="Select 'Checkout existing branch'">
+        Browse available branches
+      </Step>
+      
+      <Step title="Choose branch">
+        Select from local and remote branches
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Create New Branch">
+    <Steps>
+      <Step title="Press `c`">
+        Open creation menu
+      </Step>
+      
+      <Step title="Select base branch">
+        Choose the branch to create from (e.g., `main`, `develop`)
+      </Step>
+      
+      <Step title="Enter new branch name">
+        Type the name for the new branch
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## From GitHub/GitLab Issue
+
+Create a worktree from an issue with automatic branch naming.
+
+<Steps>
+  <Step title="Press `c`">
+    Open creation menu
+  </Step>
+  
+  <Step title="Select 'From GitHub/GitLab issue'">
+    LazyWorktree fetches open issues
+  </Step>
+  
+  <Step title="Choose issue">
+    Select from the list of open issues
+  </Step>
+  
+  <Step title="Branch name generated">
+    Automatic branch name: `issue-{number}-{title}`
+  </Step>
+</Steps>
+
+<CodeGroup>
+```yaml config.yaml (Default Template)
+issue_branch_name_template: "issue-{number}-{title}"
+```
+
+```yaml config.yaml (With AI Generation)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this issue'"
+issue_branch_name_template: "issue-{number}-{generated}"
+```
+</CodeGroup>
+
+### Template Placeholders
+
+- `{number}` - Issue number
+- `{title}` - Original sanitised issue title
+- `{generated}` - AI-generated title (if `branch_name_script` configured)
+
+<Tip>
+Configure `worktree_note_script` to automatically generate implementation notes from the issue description.
+</Tip>
+
+## From Open PR/MR
+
+Create a worktree from an open pull request or merge request.
+
+<Steps>
+  <Step title="Press `c`">
+    Open creation menu
+  </Step>
+  
+  <Step title="Select 'From open PR/MR'">
+    LazyWorktree fetches open PRs/MRs
+  </Step>
+  
+  <Step title="Choose PR/MR">
+    Select from the list with titles and authors
+  </Step>
+  
+  <Step title="Branch handling">
+    - **You're the author**: Uses PR branch name
+    - **Different author**: Uses generated worktree name
+  </Step>
+</Steps>
+
+<CodeGroup>
+```yaml config.yaml (Default Template)
+pr_branch_name_template: "pr-{number}-{title}"
+```
+
+```yaml config.yaml (With Author)
+pr_branch_name_template: "pr-{number}-{pr_author}-{title}"
+```
+
+```yaml config.yaml (With AI Generation)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this PR'"
+pr_branch_name_template: "pr-{number}-{generated}"
+```
+</CodeGroup>
+
+### Template Placeholders
+
+- `{number}` - PR/MR number
+- `{title}` - Original sanitised PR/MR title
+- `{pr_author}` - PR author username (PR templates only)
+- `{generated}` - AI-generated title (if `branch_name_script` configured)
+
+<Note>
+PR/MR creation requires `gh` CLI for GitHub or `glab` CLI for GitLab.
+</Note>
+
+## AI-Generated Branch Names
+
+Configure `branch_name_script` to automatically generate meaningful branch names.
+
+<CodeGroup>
+```yaml config.yaml (For Issues/PRs)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title for this PR or issue. Output only the title (like feat-session-manager), nothing else.'"
+```
+
+```yaml config.yaml (For Diffs)
+branch_name_script: "aichat -m gemini:gemini-2.5-flash-lite 'Generate a short git branch name (no spaces, use hyphens) for this diff. Output only the branch name, nothing else.'"
+```
+
+```yaml config.yaml (Context-Aware)
+branch_name_script: |
+  if [ "$LAZYWORKTREE_TYPE" = "diff" ]; then
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a complete branch name for this diff'
+  else
+    aichat -m gemini:gemini-2.5-flash-lite 'Generate a short title (no issue-/pr- prefix) for this issue or PR'
+  fi
+```
+</CodeGroup>
+
+### Environment Variables
+
+The script receives:
+
+- `LAZYWORKTREE_TYPE` - `pr`, `issue`, or `diff`
+- `LAZYWORKTREE_NUMBER` - Issue/PR number
+- `LAZYWORKTREE_TEMPLATE` - The configured template
+- `LAZYWORKTREE_SUGGESTED_NAME` - Default suggested name
+
+<Tip>
+Smaller, faster models like `gemini-2.5-flash-lite` work well for branch name generation.
+</Tip>
+
+## Automatic Worktree Notes
+
+Configure `worktree_note_script` to generate initial notes when creating from PR/MR or issue.
+
+<CodeGroup>
+```yaml config.yaml
+worktree_note_script: "aichat -m gemini:gemini-2.5-flash-lite 'Summarise this ticket into practical implementation notes.'"
+```
+</CodeGroup>
+
+The script receives the issue/PR title and body on stdin and can output multiline notes.
+
+### Environment Variables
+
+- `LAZYWORKTREE_TYPE` - `pr` or `issue`
+- `LAZYWORKTREE_NUMBER` - Issue/PR number
+- `LAZYWORKTREE_TITLE` - Issue/PR title
+- `LAZYWORKTREE_URL` - Issue/PR URL
+
+<Note>
+If the script fails or outputs nothing, creation continues without a note.
+</Note>
