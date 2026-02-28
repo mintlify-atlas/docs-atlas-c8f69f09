@@ -1,0 +1,113 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "LazyWorktree",
+  "projectDescription": "A powerful TUI and CLI for managing Git worktrees with GitHub/GitLab integration, custom commands, and terminal multiplexer support.",
+  "theme": "aspen",
+  "primaryColor": "#8B5CF6",
+  "lightColor": "#A78BFA",
+  "darkColor": "#6D28D9",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/worktree-management",
+              "features/creation-modes",
+              "features/pr-mr-integration",
+              "features/ci-status",
+              "features/notes-taskboard",
+              "features/custom-commands"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/settings",
+              "configuration/themes",
+              "configuration/git-config",
+              "configuration/wt-files",
+              "configuration/branch-naming",
+              "configuration/custom-commands"
+            ]
+          },
+          {
+            "group": "Usage Guides",
+            "pages": [
+              "guides/keybindings",
+              "guides/tui-interface",
+              "guides/cli-usage",
+              "guides/shell-integration",
+              "guides/multiplexer-integration"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/tofu-security",
+              "advanced/ai-integration",
+              "advanced/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/create",
+              "cli/delete",
+              "cli/rename",
+              "cli/list",
+              "cli/exec"
+            ]
+          },
+          {
+            "group": "Options",
+            "pages": [
+              "cli/global-flags",
+              "cli/config-overrides"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Keyboard-driven TUI for Git worktree management",
+    "Create worktrees from branches, PRs, MRs, or issues",
+    "GitHub/GitLab integration with CI status display",
+    "Per-worktree notes and taskboard with markdown support",
+    "Custom commands with tmux/zellij session management",
+    "AI-powered automatic branch naming",
+    "Shell integration for seamless directory navigation",
+    "21 built-in themes with custom theme support",
+    "TOFU security for repository-specific hooks",
+    "Full CLI with interactive and non-interactive modes"
+  ],
+  "publicApiSurface": [
+    "lazyworktree (TUI mode)",
+    "lazyworktree create [options] [name]",
+    "lazyworktree delete [options]",
+    "lazyworktree rename <old-name> <new-name>",
+    "lazyworktree list [--json|--pristine]",
+    "lazyworktree exec [--workspace|-w <name>] [--key|-k <key>] [command]",
+    "Config: ~/.config/lazyworktree/config.yaml",
+    "Git config prefix: lw.*",
+    "Repository hooks: .wt file",
+    "Environment variables: WORKTREE_*, LW_CI_*"
+  ]
+}
